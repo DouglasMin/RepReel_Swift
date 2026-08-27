@@ -7,6 +7,7 @@ struct ProgramDetailView: View {
     @Environment(AppEnvironment.self) private var environment
     @State private var program: WorkoutProgramResponse?
     @State private var errorMessage: String?
+    @State private var pendingStart: WorkoutDay?
 
     var body: some View {
         List {
@@ -20,7 +21,22 @@ struct ProgramDetailView: View {
                             ExerciseGroupCard(group: group)
                         }
                     } header: {
-                        DayHeader(day: day)
+                        HStack {
+                            DayHeader(day: day)
+                            Spacer()
+                            Button("시작") {
+                                if environment.hasWorkoutInProgress {
+                                    pendingStart = day
+                                } else {
+                                    environment.startWorkout(programId: programId, day: day)
+                                }
+                            }
+                            .font(.caption.weight(.semibold))
+                            .buttonStyle(.borderedProminent)
+                            .buttonBorderShape(.capsule)
+                            .controlSize(.small)
+                            .textCase(nil)
+                        }
                     }
                 }
                 if let progression = program.progression {
@@ -43,6 +59,22 @@ struct ProgramDetailView: View {
         .navigationTitle(program?.title ?? "루틴")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
+        .confirmationDialog(
+            "진행 중인 운동이 있습니다",
+            isPresented: .init(get: { pendingStart != nil },
+                               set: { if !$0 { pendingStart = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("기존 기록 삭제하고 시작", role: .destructive) {
+                if let day = pendingStart {
+                    Task { await environment.replaceWorkout(programId: programId, day: day) }
+                }
+                pendingStart = nil
+            }
+            Button("취소", role: .cancel) { pendingStart = nil }
+        } message: {
+            Text("새 운동을 시작하면 진행 중이던 기록이 사라집니다.")
+        }
     }
 
     private func load() async {

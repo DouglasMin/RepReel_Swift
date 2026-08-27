@@ -10,7 +10,8 @@ struct LibraryView: View {
     @State private var path: [String] = []
 
     var body: some View {
-        NavigationStack(path: $path) {
+        ZStack {
+            NavigationStack(path: $path) {
             Group {
                 if let store {
                     content(store)
@@ -28,6 +29,25 @@ struct LibraryView: View {
                 if let store { AddReelSheet(store: store) }
             }
         }
+            if let workout = environment.workout {
+                WorkoutContainer(isPresented: .constant(true)) {
+                    WorkoutBar(store: workout)
+                } expanded: {
+                    WorkoutSessionView(
+                        store: workout,
+                        onFinish: { Task { await finish(workout) } },
+                        onDiscard: {
+                            Task {
+                                await workout.discard()
+                                environment.endWorkout()
+                            }
+                        }
+                    )
+                }
+                .transition(.move(edge: .bottom))
+            }
+        }
+        .animation(.spring(duration: 0.4, bounce: 0), value: environment.workout == nil)
         .task {
             if store == nil {
                 store = LibraryStore(client: environment.client, jobStore: environment.pendingJobs)
@@ -41,8 +61,16 @@ struct LibraryView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             // The share extension writes while the app is backgrounded.
-            if phase == .active { store?.reloadPendingJobs() }
+            if phase == .active {
+                store?.reloadPendingJobs()
+                Task { await environment.restoreWorkoutIfNeeded() }
+            }
         }
+    }
+
+    private func finish(_ workout: WorkoutSessionStore) async {
+        await workout.flushPendingSave()
+        await workout.finish(notes: nil)
     }
 
     #if DEBUG
