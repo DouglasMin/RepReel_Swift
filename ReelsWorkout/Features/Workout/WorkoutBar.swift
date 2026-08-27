@@ -13,7 +13,9 @@ struct WorkoutBar: View {
                 .frame(width: 8, height: 8)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(store.isOrphaned ? "\(store.draft.dayTitle) · 이어하기"
+                // An orphaned draft cannot be continued, only discarded — say so
+                // rather than inviting a tap that leads nowhere.
+                Text(store.isOrphaned ? "\(store.draft.dayTitle) · 루틴 없음"
                                       : store.draft.dayTitle)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
@@ -40,6 +42,10 @@ struct WorkoutBar: View {
 
     private func elapsed(at now: Date) -> String {
         let seconds = max(0, Int(now.timeIntervalSince1970) - store.draft.startedAt)
-        return String(format: "%d:%02d", seconds / 60, seconds % 60)
+        let hours = seconds / 3600
+        guard hours > 0 else {
+            return String(format: "%d:%02d", seconds / 60, seconds % 60)
+        }
+        return String(format: "%d:%02d:%02d", hours, (seconds % 3600) / 60, seconds % 60)
     }
 }

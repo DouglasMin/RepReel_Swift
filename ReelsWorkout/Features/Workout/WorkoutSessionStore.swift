@@ -123,7 +123,7 @@ extension WorkoutSessionStore {
             WorkoutDraft.seed(programId: programId, day: $0, startedAt: startedAt)
         } ?? WorkoutDraft(
             programId: programId, dayNumber: dayNumber,
-            dayTitle: "이어하기", startedAt: startedAt,
+            dayTitle: "Day \(dayNumber)", startedAt: startedAt,
             exercises: sessionData.completedExercises.map { logged in
                 DraftExercise(
                     exerciseId: logged.exerciseId, exerciseName: logged.exerciseName,
