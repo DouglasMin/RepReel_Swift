@@ -9,6 +9,7 @@ struct WorkoutSessionView: View {
     @State private var expandedRPE: String?
     @State private var confirmDiscard = false
     @FocusState private var focused: WorkoutFieldID?
+    @State private var swapTarget: Int?
 
     /// Every text field in visit order, so 이전/다음 can step across exercises.
     private var fieldOrder: [WorkoutFieldID] {
@@ -49,6 +50,12 @@ struct WorkoutSessionView: View {
                 RestTimerBar(endsAt: endsAt) { store.dismissRest() }
                     .padding(.horizontal, 16)
                     .padding(.bottom, 92)
+            }
+        }
+        .sheet(item: Binding(get: { swapTarget.map(SwapTarget.init) },
+                             set: { swapTarget = $0?.index })) { target in
+            ExerciseSwapSheet(store: store, exerciseIndex: target.index) { item in
+                store.swap(exercise: target.index, to: item)
             }
         }
         .confirmationDialog("이 운동을 삭제할까요?", isPresented: $confirmDiscard,
@@ -104,6 +111,13 @@ struct WorkoutSessionView: View {
                         Text(exercise.exerciseName).font(.subheadline.weight(.semibold))
                         Spacer()
                         Text(exercise.prescription).font(.caption).foregroundStyle(.secondary)
+                        Menu {
+                            Button("대체 운동 찾기", systemImage: "arrow.triangle.swap") {
+                                swapTarget = exerciseIndex
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle").foregroundStyle(.secondary)
+                        }
                     }
                     .textCase(nil)
                 }
@@ -138,4 +152,10 @@ struct WorkoutSessionView: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 28)
     }
+}
+
+
+private struct SwapTarget: Identifiable {
+    let index: Int
+    var id: Int { index }
 }

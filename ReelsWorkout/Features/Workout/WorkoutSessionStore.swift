@@ -170,4 +170,33 @@ extension WorkoutSessionStore {
         saveTask?.cancel()
         _ = try? await client.discardActiveSession()
     }
+
+    func substitutes(for exercise: Int) async throws -> [ExerciseSubstituteItem] {
+        guard draft.exercises.indices.contains(exercise) else { return [] }
+        let target = draft.exercises[exercise]
+        let response = try await client.substituteExercise(
+            ExerciseSubstituteRequest(
+                exerciseName: target.exerciseName,
+                targetMuscle: target.exerciseName,
+                preferredEquipment: nil
+            )
+        )
+        return response.substitutes
+    }
+
+    /// Replaces the exercise but keeps the logged rows, so the checklist does not
+    /// reset when a machine is taken.
+    func swap(exercise: Int, to item: ExerciseSubstituteItem) {
+        guard draft.exercises.indices.contains(exercise) else { return }
+        let existing = draft.exercises[exercise]
+        draft.exercises[exercise] = DraftExercise(
+            exerciseId: existing.exerciseId,
+            exerciseName: item.exerciseName,
+            equipment: EquipmentType(rawValue: item.equipment) ?? existing.equipment,
+            restSeconds: existing.restSeconds,
+            prescription: item.recommendedVolume ?? existing.prescription,
+            sets: existing.sets
+        )
+        scheduleSave()
+    }
 }
