@@ -33,16 +33,24 @@ struct LibraryView: View {
                 WorkoutContainer(isPresented: .constant(true)) {
                     WorkoutBar(store: workout)
                 } expanded: {
-                    WorkoutSessionView(
-                        store: workout,
-                        onFinish: { Task { await finish(workout) } },
-                        onDiscard: {
-                            Task {
-                                await workout.discard()
-                                environment.endWorkout()
-                            }
+                    Group {
+                        if case .finished(let log) = workout.finishState {
+                            WorkoutSummaryView(log: log) { environment.endWorkout() }
+                        } else {
+                            WorkoutSessionView(
+                                store: workout,
+                                onFinish: { Task { await finish(workout) } },
+                                onDiscard: {
+                                    Task {
+                                        await workout.discard()
+                                        environment.endWorkout()
+                                    }
+                                }
+                            )
                         }
-                    )
+                    }
+                    .transition(.opacity)
+                    .animation(.easeInOut(duration: 0.35), value: isFinished(workout))
                 }
                 .transition(.move(edge: .bottom))
             }
@@ -66,6 +74,11 @@ struct LibraryView: View {
                 Task { await environment.restoreWorkoutIfNeeded() }
             }
         }
+    }
+
+    private func isFinished(_ workout: WorkoutSessionStore) -> Bool {
+        if case .finished = workout.finishState { return true }
+        return false
     }
 
     private func finish(_ workout: WorkoutSessionStore) async {

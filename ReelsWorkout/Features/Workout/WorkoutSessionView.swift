@@ -21,6 +21,11 @@ struct WorkoutSessionView: View {
         }
     }
 
+    private var isFailed: Bool {
+        if case .failed = store.finishState { return true }
+        return false
+    }
+
     private func step(_ offset: Int) {
         guard let focused, let index = fieldOrder.firstIndex(of: focused) else { return }
         let next = index + offset
@@ -57,6 +62,12 @@ struct WorkoutSessionView: View {
             ExerciseSwapSheet(store: store, exerciseIndex: target.index) { item in
                 store.swap(exercise: target.index, to: item)
             }
+        }
+        .alert("저장하지 못했습니다", isPresented: .constant(isFailed)) {
+            Button("다시 시도") { onFinish() }
+            Button("취소", role: .cancel) { store.finishState = .idle }
+        } message: {
+            if case .failed(let message) = store.finishState { Text(message) }
         }
         .confirmationDialog("이 운동을 삭제할까요?", isPresented: $confirmDiscard,
                             titleVisibility: .visible) {
