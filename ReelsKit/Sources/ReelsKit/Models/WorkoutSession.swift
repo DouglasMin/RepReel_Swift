@@ -25,6 +25,15 @@ public struct LoggedSet: Codable, Identifiable, Sendable {
         case completed
     }
 
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.setNumber = (try? container.decodeIfPresent(Int.self, forKey: .setNumber)) ?? 1
+        self.weightKg = (try? container.decodeIfPresent(Double.self, forKey: .weightKg)) ?? 0
+        self.reps = (try? container.decodeIfPresent(Int.self, forKey: .reps)) ?? 0
+        self.rpe = try? container.decodeIfPresent(Double.self, forKey: .rpe)
+        self.completed = (try? container.decodeIfPresent(Bool.self, forKey: .completed)) ?? true
+    }
+
     /// Optimistic client-side tonnage, for the counter that ticks up between
     /// draft saves. The authoritative number is `volume_analytics` from the
     /// server — never reconcile the two on screen.
@@ -50,6 +59,13 @@ public struct ExecutedExerciseLog: Codable, Identifiable, Sendable {
         case exerciseId = "exercise_id"
         case exerciseName = "exercise_name"
         case sets
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.exerciseId = (try? container.decodeIfPresent(String.self, forKey: .exerciseId)) ?? UUID().uuidString
+        self.exerciseName = (try? container.decodeIfPresent(String.self, forKey: .exerciseName)) ?? ""
+        self.sets = (try? container.decodeIfPresent([LoggedSet].self, forKey: .sets)) ?? []
     }
 
     public var totalExerciseVolumeKg: Double {
@@ -99,11 +115,23 @@ public struct WorkoutSessionLog: Codable, Identifiable, Sendable {
         case volumeAnalytics = "volume_analytics"
         case sessionNotes = "session_notes"
     }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.sessionId = try? container.decodeIfPresent(String.self, forKey: .sessionId)
+        self.programId = (try? container.decodeIfPresent(String.self, forKey: .programId)) ?? ""
+        self.dayNumber = (try? container.decodeIfPresent(Int.self, forKey: .dayNumber)) ?? 1
+        self.loggedAt = try? container.decodeIfPresent(Int.self, forKey: .loggedAt)
+        self.durationSeconds = try? container.decodeIfPresent(Int.self, forKey: .durationSeconds)
+        self.completedExercises = (try? container.decodeIfPresent([ExecutedExerciseLog].self, forKey: .completedExercises)) ?? []
+        self.volumeAnalytics = try? container.decodeIfPresent(WorkoutVolumeAnalytics.self, forKey: .volumeAnalytics)
+        self.sessionNotes = try? container.decodeIfPresent(String.self, forKey: .sessionNotes)
+    }
 }
 
 public struct SessionCreateResponse: Codable, Sendable {
-    public let success: Bool
-    public let sessionId: String
+    public let success: Bool?
+    public let sessionId: String?
     /// The finished session echoed back, carrying server-computed volume.
     public let session: WorkoutSessionLog?
 
@@ -111,6 +139,12 @@ public struct SessionCreateResponse: Codable, Sendable {
         case success
         case sessionId = "session_id"
         case session
+    }
+
+    public init(success: Bool? = true, sessionId: String? = nil, session: WorkoutSessionLog? = nil) {
+        self.success = success
+        self.sessionId = sessionId
+        self.session = session
     }
 }
 

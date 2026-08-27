@@ -194,23 +194,41 @@ public struct APIClient: Sendable {
         do {
             (data, http) = try await transport.send(request)
         } catch {
+            #if DEBUG
+            print("[APIClient] Transport failed for \(request.httpMethod ?? "") \(request.url?.path ?? ""): \(error)")
+            #endif
             throw APIError.transport(error)
         }
+
+        #if DEBUG
+        print("[APIClient] \(request.httpMethod ?? "") \(request.url?.path ?? "") -> HTTP \(http.statusCode)")
+        #endif
 
         switch http.statusCode {
         case 200..<300:
             break
         case 403:
+            #if DEBUG
+            print("[APIClient] 403 Forbidden! Check x-user-email and x-app-secret.")
+            #endif
             throw APIError.forbidden
         case 404:
             throw APIError.notFound
         default:
-            throw APIError.http(status: http.statusCode, body: String(data: data, encoding: .utf8))
+            let body = String(data: data, encoding: .utf8)
+            #if DEBUG
+            print("[APIClient] Error HTTP \(http.statusCode): \(body ?? "<nil>")")
+            #endif
+            throw APIError.http(status: http.statusCode, body: body)
         }
 
         do {
             return try JSONDecoder().decode(Response.self, from: data)
         } catch {
+            #if DEBUG
+            let body = String(data: data, encoding: .utf8) ?? "<binary>"
+            print("[APIClient] Failed to decode \(Response.self): \(error)\nRaw response body was:\n\(body)")
+            #endif
             throw APIError.decoding(error)
         }
     }

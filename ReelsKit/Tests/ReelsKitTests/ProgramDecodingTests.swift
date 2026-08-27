@@ -140,4 +140,74 @@ struct ProgramDecodingTests {
         let sets = try #require(exercises[0]["sets"] as? [[String: Any]])
         #expect(sets[0]["weight_kg"] as? Double == 80)
     }
+
+    @Test("Correctly normalizes Push day exercises so accessory/isolation are not lumped into Main")
+    func normalizesExerciseGroups() throws {
+        let json = """
+        {
+          "day_number": 1,
+          "day_title": "Day 1: 푸쉬",
+          "exercise_groups": [{
+            "category": "Main Compound (메인 복합 다관절 운동)",
+            "target_region": "가슴",
+            "exercises": [
+              {
+                "exercise_id": "bench_press",
+                "canonical_name_ko": "바벨 벤치프레스",
+                "equipment": "Barbell (바벨)",
+                "primary_muscle": "대흉근",
+                "is_main_lift": true,
+                "volume": { "min_sets": 4, "min_reps": 8 }
+              },
+              {
+                "exercise_id": "arnold_press",
+                "canonical_name_ko": "아놀드 프레스",
+                "equipment": "Dumbbell (덤벨)",
+                "primary_muscle": "전면 삼각근",
+                "is_main_lift": false,
+                "volume": { "min_sets": 3, "min_reps": 12 }
+              },
+              {
+                "exercise_id": "side_lateral_raise",
+                "canonical_name_ko": "사이드 래터럴 레이즈",
+                "equipment": "Dumbbell (덤벨)",
+                "primary_muscle": "측면 삼각근",
+                "is_main_lift": false,
+                "volume": { "min_sets": 4, "min_reps": 15 }
+              },
+              {
+                "exercise_id": "bent_over_lateral_raise",
+                "canonical_name_ko": "벤트오버 래터럴 레이즈",
+                "equipment": "Dumbbell (덤벨)",
+                "primary_muscle": "후면 삼각근",
+                "is_main_lift": false,
+                "volume": { "min_sets": 4, "min_reps": 15 }
+              }
+            ]
+          }]
+        }
+        """.data(using: .utf8)!
+
+        let day = try JSONDecoder().decode(WorkoutDay.self, from: json)
+        let normalized = day.normalizedExerciseGroups
+
+        // Should be normalized into 4 distinct groups by category and muscle
+        #expect(normalized.count == 4)
+
+        #expect(normalized[0].category == .mainCompound)
+        #expect(normalized[0].targetRegion == "대흉근")
+        #expect(normalized[0].exercises.first?.canonicalNameKo == "바벨 벤치프레스")
+
+        #expect(normalized[1].category == .accessory)
+        #expect(normalized[1].targetRegion == "전면 삼각근")
+        #expect(normalized[1].exercises.first?.canonicalNameKo == "아놀드 프레스")
+
+        #expect(normalized[2].category == .isolation)
+        #expect(normalized[2].targetRegion == "측면 삼각근")
+        #expect(normalized[2].exercises.first?.canonicalNameKo == "사이드 래터럴 레이즈")
+
+        #expect(normalized[3].category == .isolation)
+        #expect(normalized[3].targetRegion == "후면 삼각근")
+        #expect(normalized[3].exercises.first?.canonicalNameKo == "벤트오버 래터럴 레이즈")
+    }
 }

@@ -76,6 +76,35 @@ struct ActiveSessionTests {
         #expect(analytics.exerciseBreakdown.first?.estimated1rmKg == 107.7)
     }
 
+    @Test("Decodes a draft-save response shaped like the spec, with no exercise_breakdown")
+    func decodesAnalyticsWithoutBreakdown() throws {
+        // Verbatim from docs/API_SPECIFICATION.md's PUT /sessions/active example.
+        // If this throws, every draft save fails silently and live tonnage dies.
+        let json = #"""
+        {
+          "success": true,
+          "active_session": {
+            "user_id": "dongik@example.com",
+            "program_id": "che-dan-sil-ppl-routine-part2",
+            "day_number": 1,
+            "volume_analytics": {
+              "total_volume_kg": 1460.0,
+              "total_sets_completed": 2,
+              "total_reps_completed": 18
+            }
+          }
+        }
+        """#
+
+        let response = try JSONDecoder().decode(
+            ActiveSessionUpdateResponse.self, from: Data(json.utf8)
+        )
+
+        let analytics = try #require(response.activeSession?.volumeAnalytics)
+        #expect(analytics.totalVolumeKg == 1460)
+        #expect(analytics.exerciseBreakdown.isEmpty)
+    }
+
     @Test("Turns the 404 'nothing in progress' answer into an empty result")
     func mapsNotFoundToEmpty() async throws {
         let recorder = StubTransport.Recorder()

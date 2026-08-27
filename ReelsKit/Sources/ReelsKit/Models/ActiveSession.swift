@@ -13,6 +13,18 @@ public struct ExerciseVolumeAnalytics: Codable, Identifiable, Sendable {
     public let topSetWeightKg: Double?
     public let estimated1rmKg: Double?
 
+    public init(exerciseId: String, exerciseName: String, volumeKg: Double,
+                completedSets: Int, completedReps: Int,
+                topSetWeightKg: Double? = nil, estimated1rmKg: Double? = nil) {
+        self.exerciseId = exerciseId
+        self.exerciseName = exerciseName
+        self.volumeKg = volumeKg
+        self.completedSets = completedSets
+        self.completedReps = completedReps
+        self.topSetWeightKg = topSetWeightKg
+        self.estimated1rmKg = estimated1rmKg
+    }
+
     enum CodingKeys: String, CodingKey {
         case exerciseId = "exercise_id"
         case exerciseName = "exercise_name"
@@ -21,6 +33,17 @@ public struct ExerciseVolumeAnalytics: Codable, Identifiable, Sendable {
         case completedReps = "completed_reps"
         case topSetWeightKg = "top_set_weight_kg"
         case estimated1rmKg = "estimated_1rm_kg"
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.exerciseId = (try? container.decodeIfPresent(String.self, forKey: .exerciseId)) ?? UUID().uuidString
+        self.exerciseName = (try? container.decodeIfPresent(String.self, forKey: .exerciseName)) ?? ""
+        self.volumeKg = (try? container.decodeIfPresent(Double.self, forKey: .volumeKg)) ?? 0
+        self.completedSets = (try? container.decodeIfPresent(Int.self, forKey: .completedSets)) ?? 0
+        self.completedReps = (try? container.decodeIfPresent(Int.self, forKey: .completedReps)) ?? 0
+        self.topSetWeightKg = try? container.decodeIfPresent(Double.self, forKey: .topSetWeightKg)
+        self.estimated1rmKg = try? container.decodeIfPresent(Double.self, forKey: .estimated1rmKg)
     }
 }
 
@@ -32,6 +55,14 @@ public struct WorkoutVolumeAnalytics: Codable, Sendable {
     public let totalRepsCompleted: Int
     public let exerciseBreakdown: [ExerciseVolumeAnalytics]
 
+    public init(totalVolumeKg: Double, totalSetsCompleted: Int,
+                totalRepsCompleted: Int, exerciseBreakdown: [ExerciseVolumeAnalytics] = []) {
+        self.totalVolumeKg = totalVolumeKg
+        self.totalSetsCompleted = totalSetsCompleted
+        self.totalRepsCompleted = totalRepsCompleted
+        self.exerciseBreakdown = exerciseBreakdown
+    }
+
     public var volumeSummaryString: String {
         let tonnage = totalVolumeKg.formatted(.number.precision(.fractionLength(0...1)))
         return "\(tonnage) kg (\(totalSetsCompleted)세트 · \(totalRepsCompleted)회)"
@@ -42,6 +73,22 @@ public struct WorkoutVolumeAnalytics: Codable, Sendable {
         case totalSetsCompleted = "total_sets_completed"
         case totalRepsCompleted = "total_reps_completed"
         case exerciseBreakdown = "exercise_breakdown"
+    }
+}
+
+extension WorkoutVolumeAnalytics {
+    /// `exercise_breakdown` is absent from the documented `PUT /sessions/active`
+    /// response (`docs/API_SPECIFICATION.md`) even though the deployed backend
+    /// sends it. Defaulting to `[]` keeps a doc-conforming response decodable —
+    /// otherwise every draft save would throw and live tonnage would silently die.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.totalVolumeKg = (try? container.decodeIfPresent(Double.self, forKey: .totalVolumeKg)) ?? 0
+        self.totalSetsCompleted = (try? container.decodeIfPresent(Int.self, forKey: .totalSetsCompleted)) ?? 0
+        self.totalRepsCompleted = (try? container.decodeIfPresent(Int.self, forKey: .totalRepsCompleted)) ?? 0
+        self.exerciseBreakdown = (try? container.decodeIfPresent(
+            [ExerciseVolumeAnalytics].self, forKey: .exerciseBreakdown
+        )) ?? []
     }
 }
 

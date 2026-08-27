@@ -78,6 +78,8 @@ struct WorkoutDraftSeedingTests {
         #expect(draft.exercises[0].prescription == "5세트 × 8-10회")
         #expect(draft.exercises[0].restSeconds == 180)
         #expect(draft.exercises[0].exerciseName == "벤치프레스")
+        // The substitution endpoint wants a muscle, not the exercise's own name.
+        #expect(draft.exercises[0].primaryMuscle == "대흉근")
     }
 }
 
@@ -92,31 +94,59 @@ struct WorkoutDraftCarryDownTests {
         )
     }
 
-    @Test("Typing a weight fills the empty sets below it")
+    @Test("Committing a weight fills the empty sets below it")
     func fillsBelow() {
         var d = draft()
-        d.setWeight(80, exercise: 0, set: 0)
+        d.commitWeight(80, exercise: 0, set: 0)
 
         #expect(d.exercises[0].sets.map(\.weightKg) == [80, 80, 80, 80])
     }
 
-    @Test("Does not overwrite a weight the user already set")
-    func preservesExplicitWeights() {
+    @Test("Typing writes only the set being typed into")
+    func typingDoesNotCascade() {
         var d = draft()
         d.setWeight(80, exercise: 0, set: 0)
-        d.setWeight(85, exercise: 0, set: 2)   // set 3 explicit
-        d.setWeight(82.5, exercise: 0, set: 0) // re-edit set 1
 
-        // Set 3 keeps 85; sets already filled by carry-down are not re-filled.
-        #expect(d.exercises[0].sets[0].weightKg == 82.5)
-        #expect(d.exercises[0].sets[2].weightKg == 85)
+        #expect(d.exercises[0].sets.map(\.weightKg) == [80, nil, nil, nil])
+    }
+
+    @Test("An intermediate keystroke never reaches the sets below")
+    func keystrokesDoNotCarryDown() {
+        var d = draft()
+        // "80" typed one digit at a time: the '8' must not land on sets 2-4,
+        // because they would then be non-empty and the '0' could not correct them.
+        d.setWeight(8, exercise: 0, set: 0)
+        d.setWeight(80, exercise: 0, set: 0)
+        d.commitWeight(80, exercise: 0, set: 0)   // focus leaves the field
+
+        #expect(d.exercises[0].sets.map(\.weightKg) == [80, 80, 80, 80])
+    }
+
+    @Test("Editing set 2 cascades to subsequent uncompleted sets 3-4 while preserving set 1")
+    func cascadesForwardToRemainingSets() {
+        var d = draft()
+        // Setting set 1 (80kg) cascades to sets 2-4
+        d.commitWeight(80, exercise: 0, set: 0)
+        #expect(d.exercises[0].sets.map(\.weightKg) == [80, 80, 80, 80])
+
+        // Rewriting set 2 (85kg) cascades to sets 3-4 while set 1 stays 80kg
+        d.commitWeight(85, exercise: 0, set: 1)
+        #expect(d.exercises[0].sets.map(\.weightKg) == [80, 85, 85, 85])
+
+        // Complete set 1 and set 2
+        d.exercises[0].sets[0].completed = true
+        d.exercises[0].sets[1].completed = true
+
+        // Rewriting set 3 (90kg) cascades to set 4 while completed sets 1 and 2 are preserved
+        d.commitWeight(90, exercise: 0, set: 2)
+        #expect(d.exercises[0].sets.map(\.weightKg) == [80, 85, 90, 90])
     }
 
     @Test("Clearing a weight does not cascade")
     func clearingIsLocal() {
         var d = draft()
-        d.setWeight(80, exercise: 0, set: 0)
-        d.setWeight(nil, exercise: 0, set: 1)
+        d.commitWeight(80, exercise: 0, set: 0)
+        d.commitWeight(nil, exercise: 0, set: 1)
 
         #expect(d.exercises[0].sets[1].weightKg == nil)
         #expect(d.exercises[0].sets[2].weightKg == 80)
@@ -131,7 +161,7 @@ struct WorkoutDraftWireTests {
             day: makeDay([makeExercise(id: "bench", sets: 3, minReps: 8, maxReps: 10)]),
             startedAt: 1771979000
         )
-        d.setWeight(80, exercise: 0, set: 0)
+        d.commitWeight(80, exercise: 0, set: 0)
         d.exercises[0].sets[0].completed = true
         d.exercises[0].sets[1].completed = true
         return d
@@ -177,5 +207,34 @@ struct WorkoutDraftWireTests {
     @Test("Counts only completed sets")
     func countsCompleted() {
         #expect(loggedDraft().completedSetCount == 2)
+    }
+
+    @Test("Adding a set appends a new set and inherits previous weight and reps")
+    func addsSet() {
+        var d = loggedDraft()
+        #expect(d.exercises[0].sets.count == 3)
+
+        d.addSet(to: 0)
+        #expect(d.exercises[0].sets.count == 4)
+        #expect(d.exercises[0].sets[3].setNumber == 4)
+        #expect(d.exercises[0].sets[3].weightKg == 80)
+        #expect(d.exercises[0].sets[3].reps == 10)
+        #expect(d.exercises[0].sets[3].completed == false)
+    }
+
+    @Test("Calculates progress metrics correctly")
+    func computesProgress() {
+        var d = loggedDraft()
+        #expect(d.totalSetCount == 3)
+        #expect(d.completedSetCount == 2)
+        #expect(d.totalExerciseCount == 1)
+        #expect(d.completedExerciseCount == 0)
+        #expect(d.progressFraction == 2.0 / 3.0)
+
+        // Complete remaining set
+        d.exercises[0].sets[2].completed = true
+        #expect(d.completedSetCount == 3)
+        #expect(d.completedExerciseCount == 1)
+        #expect(d.progressFraction == 1.0)
     }
 }

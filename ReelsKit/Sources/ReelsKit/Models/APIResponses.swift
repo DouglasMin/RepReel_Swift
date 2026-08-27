@@ -8,7 +8,7 @@ public struct IngestRequest: Codable, Sendable {
 }
 
 public struct IngestResponse: Codable, Sendable {
-    public let success: Bool
+    public let success: Bool?
     public let jobId: String
     public let reelId: String?
     public let status: JobStatus
@@ -22,6 +22,17 @@ public struct IngestResponse: Codable, Sendable {
         case status
         case message
         case statusUrl = "status_url"
+    }
+
+    public init(success: Bool? = true, jobId: String, reelId: String? = nil,
+                status: JobStatus = .processing, message: String? = nil,
+                statusUrl: String? = nil) {
+        self.success = success
+        self.jobId = jobId
+        self.reelId = reelId
+        self.status = status
+        self.message = message
+        self.statusUrl = statusUrl
     }
 }
 
@@ -69,6 +80,30 @@ public struct WorkoutProgramResponse: Codable, Identifiable, Sendable {
     public var audit: DataQualityAudit? { programData.audit }
     public var progression: ProgressionRule? { programData.progression }
 
+    public init(
+        programId: String,
+        reelId: String? = nil,
+        creator: String? = nil,
+        title: String,
+        splitType: SplitType? = nil,
+        cycleFrequency: String? = nil,
+        overview: String? = nil,
+        programData: WorkoutProgram,
+        s3Uri: String? = nil,
+        createdAt: Int? = nil
+    ) {
+        self.programId = programId
+        self.reelId = reelId
+        self.creator = creator
+        self.title = title
+        self.splitType = splitType
+        self.cycleFrequency = cycleFrequency
+        self.overview = overview
+        self.programData = programData
+        self.s3Uri = s3Uri
+        self.createdAt = createdAt
+    }
+
     enum CodingKeys: String, CodingKey {
         case programId = "program_id"
         case reelId = "reel_id"
@@ -95,6 +130,20 @@ public struct ProgramSummary: Codable, Identifiable, Sendable {
 
     public var createdDate: Date? {
         createdAt.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+    }
+
+    public init(
+        programId: String,
+        title: String,
+        creator: String? = nil,
+        splitType: SplitType? = nil,
+        createdAt: Int? = nil
+    ) {
+        self.programId = programId
+        self.title = title
+        self.creator = creator
+        self.splitType = splitType
+        self.createdAt = createdAt
     }
 
     enum CodingKeys: String, CodingKey {

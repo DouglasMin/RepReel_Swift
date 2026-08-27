@@ -43,6 +43,19 @@ public struct NextSessionRecommendationItem: Codable, Identifiable, Sendable {
     public let targetRpe: Double?
     public let progressionNote: String?
 
+    public init(exerciseId: String, exerciseName: String, lastWeightKg: Double? = nil,
+                recommendedWeightKg: Double, targetSets: Int = 3, targetReps: String = "",
+                targetRpe: Double? = nil, progressionNote: String? = nil) {
+        self.exerciseId = exerciseId
+        self.exerciseName = exerciseName
+        self.lastWeightKg = lastWeightKg
+        self.recommendedWeightKg = recommendedWeightKg
+        self.targetSets = targetSets
+        self.targetReps = targetReps
+        self.targetRpe = targetRpe
+        self.progressionNote = progressionNote
+    }
+
     enum CodingKeys: String, CodingKey {
         case exerciseId = "exercise_id"
         case exerciseName = "exercise_name"
@@ -53,15 +66,38 @@ public struct NextSessionRecommendationItem: Codable, Identifiable, Sendable {
         case targetRpe = "target_rpe"
         case progressionNote = "progression_note"
     }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.exerciseId = (try? container.decodeIfPresent(String.self, forKey: .exerciseId)) ?? UUID().uuidString
+        self.exerciseName = (try? container.decodeIfPresent(String.self, forKey: .exerciseName)) ?? ""
+        self.lastWeightKg = try? container.decodeIfPresent(Double.self, forKey: .lastWeightKg)
+        self.recommendedWeightKg = (try? container.decodeIfPresent(Double.self, forKey: .recommendedWeightKg)) ?? 0.0
+        self.targetSets = (try? container.decodeIfPresent(Int.self, forKey: .targetSets)) ?? 3
+        self.targetReps = (try? container.decodeIfPresent(String.self, forKey: .targetReps)) ?? ""
+        self.targetRpe = try? container.decodeIfPresent(Double.self, forKey: .targetRpe)
+        self.progressionNote = try? container.decodeIfPresent(String.self, forKey: .progressionNote)
+    }
 }
 
 public struct NextSessionRecommendationResponse: Codable, Sendable {
-    public let success: Bool
+    public let success: Bool?
     public let programId: String
     public let dayNumber: Int
     public let dayTitle: String?
     public let overloadSummary: String?
     public let exerciseRecommendations: [NextSessionRecommendationItem]
+
+    public init(success: Bool? = true, programId: String, dayNumber: Int,
+                dayTitle: String? = nil, overloadSummary: String? = nil,
+                exerciseRecommendations: [NextSessionRecommendationItem] = []) {
+        self.success = success
+        self.programId = programId
+        self.dayNumber = dayNumber
+        self.dayTitle = dayTitle
+        self.overloadSummary = overloadSummary
+        self.exerciseRecommendations = exerciseRecommendations
+    }
 
     enum CodingKeys: String, CodingKey {
         case success
@@ -70,6 +106,16 @@ public struct NextSessionRecommendationResponse: Codable, Sendable {
         case dayTitle = "day_title"
         case overloadSummary = "overload_summary"
         case exerciseRecommendations = "exercise_recommendations"
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.success = try? container.decodeIfPresent(Bool.self, forKey: .success)
+        self.programId = (try? container.decodeIfPresent(String.self, forKey: .programId)) ?? ""
+        self.dayNumber = (try? container.decodeIfPresent(Int.self, forKey: .dayNumber)) ?? 1
+        self.dayTitle = try? container.decodeIfPresent(String.self, forKey: .dayTitle)
+        self.overloadSummary = try? container.decodeIfPresent(String.self, forKey: .overloadSummary)
+        self.exerciseRecommendations = (try? container.decodeIfPresent([NextSessionRecommendationItem].self, forKey: .exerciseRecommendations)) ?? []
     }
 }
 
