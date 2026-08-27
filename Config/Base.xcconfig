@@ -1,0 +1,22 @@
+// Shared build settings for every target.
+//
+// Values below are safe defaults committed to git. Real values live in
+// Config/Secrets.xcconfig, which is gitignored and included at the bottom of
+// this file so its assignments win.
+
+APP_BUNDLE_ID = com.example.reelsworkout
+APP_GROUP_ID = group.com.example.reelsworkout
+APP_DISPLAY_NAME = 릴스 루틴
+
+// API host only — never a full URL. `//` starts a comment in xcconfig, so the
+// scheme is added back in AppConfig.baseURL.
+API_HOST = REPLACE_ME.execute-api.ap-northeast-2.amazonaws.com
+API_STAGE_PATH = /dev
+APP_SECRET = REPLACE_ME
+
+// Stand-in until Sign in with Apple lands. Leave empty to force the sign-in gate.
+DEV_USER_EMAIL =
+
+DEVELOPMENT_TEAM =
+
+#include? "Secrets.xcconfig"

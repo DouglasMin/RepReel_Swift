@@ -1,0 +1,89 @@
+name: ReelsWorkout
+
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: NO
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    TARGETED_DEVICE_FAMILY: "1"
+
+packages:
+  ReelsKit:
+    path: ReelsKit
+
+targets:
+  ReelsWorkout:
+    type: application
+    platform: iOS
+    sources:
+      - path: ReelsWorkout
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
+        INFOPLIST_FILE: ReelsWorkout/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ReelsWorkout/Resources/ReelsWorkout.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - package: ReelsKit
+      - target: ReelsShareExtension
+        embed: true
+
+  ReelsShareExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ReelsShareExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).ShareExtension
+        INFOPLIST_FILE: ReelsShareExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ReelsShareExtension/ReelsShareExtension.entitlements
+    dependencies:
+      - package: ReelsKit
+
+  ReelsWorkoutTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ReelsWorkoutTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).Tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: ReelsWorkout
+      - package: ReelsKit
+
+schemes:
+  ReelsWorkout:
+    build:
+      targets:
+        ReelsWorkout: all
+    run:
+      config: Debug
+      # No backend yet — run against the fixtures in PreviewFixtures.swift.
+      # Remove this once a real API host is configured.
+      commandLineArguments:
+        "-demo": true
+    test:
+      config: Debug
+      targets:
+        - ReelsWorkoutTests
+    archive:
+      config: Release
