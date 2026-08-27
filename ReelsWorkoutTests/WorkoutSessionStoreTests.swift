@@ -75,28 +75,37 @@ struct WorkoutSessionStoreTests {
         #expect(store.draft.exercises[0].sets[0].weightKg == 85)
     }
 
-    @Test("Weight carry-down happens through the store too")
+    @Test("Weight carry-down happens on commitWeight")
     func carriesWeightDown() async {
+        let transport = CountingTransport()
+        let store = makeStore(transport: transport)
+
+        store.commitWeight(80, exercise: 0, set: 0)
+
+        #expect(store.draft.exercises[0].sets.map(\.weightKg) == [80, 80, 80])
+    }
+
+    @Test("Setting weight without commit does not carry down")
+    func setWeightDoesNotCarryDown() async {
         let transport = CountingTransport()
         let store = makeStore(transport: transport)
 
         store.setWeight(80, exercise: 0, set: 0)
 
-        #expect(store.draft.exercises[0].sets.map(\.weightKg) == [80, 80, 80])
+        #expect(store.draft.exercises[0].sets.map(\.weightKg) == [80, nil, nil])
     }
 
     @Test("Completing a set starts a rest countdown from the prescription")
-    func startsRestTimer() async {
+    func startsRestTimer() throws {
         let transport = CountingTransport()
         let store = makeStore(transport: transport)
 
         #expect(store.restEndsAt == nil)
         store.completeSet(exercise: 0, set: 0)
 
-        let endsAt = try? #require(store.restEndsAt)
-        #expect(endsAt != nil)
+        let endsAt = try #require(store.restEndsAt)
         // restSeconds is 120 in the fixture.
-        #expect(abs(endsAt!.timeIntervalSinceNow - 120) < 2)
+        #expect(abs(endsAt.timeIntervalSinceNow - 120) < 2)
     }
 
     @Test("Un-completing a set clears the rest countdown")
@@ -119,6 +128,8 @@ struct WorkoutSessionStoreTests {
         store.setWeight(80, exercise: 0, set: 0)
         await store.flushPendingSave()
 
+        #expect(transport.calls.count == 1)
+        #expect(store.analytics == nil)
         #expect(store.draft.exercises[0].sets[0].weightKg == 80)
     }
 }
@@ -219,7 +230,7 @@ struct WorkoutSessionLifecycleTests {
     }
 
     @Test("Resume rebuilds the draft from the server plus the program")
-    func resumeRebuilds() async {
+    func resumeRebuilds() async throws {
         let active = #"""
         {"has_active_session":true,"active_session":{"program_id":"p1","day_number":1,
          "started_at":1000,"user_id":"lifter@example.com",
@@ -245,16 +256,15 @@ struct WorkoutSessionLifecycleTests {
 
         let store = await WorkoutSessionStore.resume(client: makeClient(transport))
 
-        let resumed = try? #require(store)
-        #expect(resumed != nil)
-        #expect(resumed?.draft.startedAt == 1000)
-        #expect(resumed?.draft.exercises[0].sets[0].completed == true)
-        #expect(resumed?.draft.exercises[0].sets[0].weightKg == 80)
-        #expect(resumed?.isOrphaned == false)
+        let resumed = try #require(store)
+        #expect(resumed.draft.startedAt == 1000)
+        #expect(resumed.draft.exercises[0].sets[0].completed == true)
+        #expect(resumed.draft.exercises[0].sets[0].weightKg == 80)
+        #expect(resumed.isOrphaned == false)
     }
 
     @Test("Resume survives a draft whose program no longer exists")
-    func resumeWithDeadProgram() async {
+    func resumeWithDeadProgram() async throws {
         let active = #"""
         {"has_active_session":true,"active_session":{"program_id":"prog_test_123",
          "day_number":1,"started_at":1000,"user_id":"lifter@example.com",
@@ -269,9 +279,28 @@ struct WorkoutSessionLifecycleTests {
 
         let store = await WorkoutSessionStore.resume(client: makeClient(transport))
 
-        let resumed = try? #require(store)
-        #expect(resumed?.isOrphaned == true)
+        let resumed = try #require(store)
+        #expect(resumed.isOrphaned == true)
         // Still shows what was logged, so discarding is an informed choice.
-        #expect(resumed?.draft.exercises[0].sets.count == 1)
+        #expect(resumed.draft.exercises[0].sets.count == 1)
+    }
+
+    @Test("Resume returns nil on transient network failure instead of orphaning")
+    func resumeTransientFailureReturnsNil() async {
+        let active = #"""
+        {"has_active_session":true,"active_session":{"program_id":"p1",
+         "day_number":1,"started_at":1000,"user_id":"lifter@example.com",
+         "session_data":{"program_id":"p1","day_number":1,
+         "completed_exercises":[{"exercise_id":"bench","exercise_name":"벤치프레스",
+         "sets":[{"set_number":1,"weight_kg":80,"reps":10,"completed":true}]}]}}}
+        """#
+        let transport = RouteTransport([
+            "GET /sessions/active": (200, active),
+            "GET /programs/p1": (500, #"{"error":"internal error"}"#)
+        ])
+
+        let store = await WorkoutSessionStore.resume(client: makeClient(transport))
+
+        #expect(store == nil)
     }
 }

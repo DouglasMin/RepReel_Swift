@@ -7,42 +7,80 @@ struct WorkoutSummaryView: View {
     let log: WorkoutSessionLog
     let onDone: () -> Void
 
+    @ScaledMetric(relativeTo: .largeTitle) private var volumeFontSize: CGFloat = 42
+
     var body: some View {
         VStack(spacing: 0) {
-            Capsule().fill(.secondary.opacity(0.5))
+            Capsule().fill(.secondary.opacity(0.4))
                 .frame(width: 36, height: 5).padding(.top, 8)
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: 28) {
                     headline
+
                     if let breakdown = log.volumeAnalytics?.exerciseBreakdown, !breakdown.isEmpty {
-                        VStack(spacing: 12) {
-                            ForEach(breakdown) { ExerciseVolumeCard(item: $0) }
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("종목별 볼륨 리포트")
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 4)
+
+                            ForEach(breakdown) { item in
+                                ExerciseVolumeCard(item: item)
+                            }
                         }
                         .padding(.horizontal, 16)
                     }
                 }
-                .padding(.top, 32)
+                .padding(.top, 24)
+                .padding(.bottom, 24)
             }
 
-            Button("확인", action: onDone)
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 28)
+            Button(action: onDone) {
+                Text("완료")
+                    .font(.headline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.brandPrimary)
+            .buttonBorderShape(.capsule)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 28)
         }
+        .sensoryFeedback(.success, trigger: true)
     }
 
     private var headline: some View {
-        VStack(spacing: 6) {
-            Text("운동 완료").font(.subheadline).foregroundStyle(.secondary)
+        VStack(spacing: 12) {
+            // Celebration Badge
+            ZStack {
+                Circle()
+                    .fill(Theme.brandGradient)
+                    .frame(width: 72, height: 72)
+                    .shadow(color: Theme.brandPrimary.opacity(0.35), radius: 12, y: 6)
 
-            Text(volumeText)
-                .font(.system(size: 44, weight: .bold, design: .rounded))
-                .monospacedDigit()
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(.white)
+            }
 
-            Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
+            VStack(spacing: 4) {
+                Text("운동 완료!")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.primary)
+
+                Text(volumeText)
+                    .font(.system(size: volumeFontSize, weight: .black, design: .rounded))
+                    .foregroundStyle(Theme.brandPrimary)
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+
+                Text(subtitle)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -58,7 +96,7 @@ struct WorkoutSummaryView: View {
             parts.append("\(analytics.totalRepsCompleted)회")
         }
         if let duration = log.durationSeconds {
-            parts.append("\(duration / 60)분")
+            parts.append("\(duration / 60)분 소요")
         }
         return parts.joined(separator: " · ")
     }
@@ -68,13 +106,20 @@ private struct ExerciseVolumeCard: View {
     let item: ExerciseVolumeAnalytics
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(item.exerciseName).font(.subheadline.weight(.semibold))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(item.exerciseName)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Text("\(item.volumeKg.formatted(.number.precision(.fractionLength(0...1)))) kg")
+                    .font(.subheadline.monospacedDigit().weight(.bold))
+                    .foregroundStyle(Theme.brandPrimary)
+            }
 
             HStack(spacing: 14) {
-                stat("볼륨", "\(item.volumeKg.formatted(.number.precision(.fractionLength(0...1)))) kg")
                 if let top = item.topSetWeightKg {
-                    stat("최고", "\(top.formatted(.number.precision(.fractionLength(0...1)))) kg")
+                    stat("최고 중량", "\(top.formatted(.number.precision(.fractionLength(0...1)))) kg")
                 }
                 if let orm = item.estimated1rmKg {
                     stat("추정 1RM", "\(orm.formatted(.number.precision(.fractionLength(0...1)))) kg")
@@ -82,14 +127,26 @@ private struct ExerciseVolumeCard: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(.quaternary.opacity(0.4), in: .rect(cornerRadius: 12))
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Theme.cardBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.03), radius: 6, y: 2)
+        )
     }
 
     private func stat(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(label).font(.caption2).foregroundStyle(.secondary)
-            Text(value).font(.caption.monospacedDigit().weight(.medium))
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .foregroundStyle(.primary)
         }
     }
 }
