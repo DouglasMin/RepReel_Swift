@@ -122,3 +122,60 @@ struct WorkoutDraftCarryDownTests {
         #expect(d.exercises[0].sets[2].weightKg == 80)
     }
 }
+@Suite("WorkoutDraft wire conversion")
+struct WorkoutDraftWireTests {
+
+    private func loggedDraft() -> WorkoutDraft {
+        var d = WorkoutDraft.seed(
+            programId: "p1",
+            day: makeDay([makeExercise(id: "bench", sets: 3, minReps: 8, maxReps: 10)]),
+            startedAt: 1771979000
+        )
+        d.setWeight(80, exercise: 0, set: 0)
+        d.exercises[0].sets[0].completed = true
+        d.exercises[0].sets[1].completed = true
+        return d
+    }
+
+    @Test("Update request carries started_at and every set, complete or not")
+    func buildsUpdateRequest() {
+        let request = loggedDraft().makeUpdateRequest()
+
+        #expect(request.programId == "p1")
+        #expect(request.dayNumber == 1)
+        #expect(request.startedAt == 1771979000)
+        #expect(request.completedExercises.count == 1)
+        // The server needs the unfinished rows too, so a resume restores them.
+        #expect(request.completedExercises[0].sets.count == 3)
+        #expect(request.completedExercises[0].sets[0].completed)
+        #expect(!request.completedExercises[0].sets[2].completed)
+    }
+
+    @Test("An empty weight becomes 0 kg on the wire, for bodyweight work")
+    func emptyWeightBecomesZero() {
+        var d = WorkoutDraft.seed(
+            programId: "p1",
+            day: makeDay([makeExercise(id: "pullup", sets: 2, minReps: 8, maxReps: nil)]),
+            startedAt: 100
+        )
+        d.exercises[0].sets[0].completed = true
+
+        let request = d.makeUpdateRequest()
+        #expect(request.completedExercises[0].sets[0].weightKg == 0)
+    }
+
+    @Test("Session log stamps logged_at and notes")
+    func buildsSessionLog() {
+        let log = loggedDraft().makeSessionLog(loggedAt: 1771982600, notes: "좋았음")
+
+        #expect(log.programId == "p1")
+        #expect(log.loggedAt == 1771982600)
+        #expect(log.durationSeconds == 1771982600 - 1771979000)
+        #expect(log.sessionNotes == "좋았음")
+    }
+
+    @Test("Counts only completed sets")
+    func countsCompleted() {
+        #expect(loggedDraft().completedSetCount == 2)
+    }
+}

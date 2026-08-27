@@ -101,3 +101,48 @@ public struct WorkoutDraft: Sendable {
         }
     }
 }
+extension WorkoutDraft {
+    /// Every set is sent, finished or not, so resuming restores the full checklist.
+    /// `completed` is what the server uses to compute volume.
+    private var wireExercises: [ExecutedExerciseLog] {
+        exercises.map { exercise in
+            ExecutedExerciseLog(
+                exerciseId: exercise.exerciseId,
+                exerciseName: exercise.exerciseName,
+                sets: exercise.sets.map { set in
+                    LoggedSet(
+                        setNumber: set.setNumber,
+                        weightKg: set.weightKg ?? 0,   // bodyweight logs as 0
+                        reps: set.reps,
+                        rpe: set.rpe,
+                        completed: set.completed
+                    )
+                }
+            )
+        }
+    }
+
+    public func makeUpdateRequest() -> ActiveSessionUpdateRequest {
+        ActiveSessionUpdateRequest(
+            programId: programId,
+            dayNumber: dayNumber,
+            startedAt: startedAt,
+            completedExercises: wireExercises
+        )
+    }
+
+    public func makeSessionLog(loggedAt: Int, notes: String?) -> WorkoutSessionLog {
+        WorkoutSessionLog(
+            programId: programId,
+            dayNumber: dayNumber,
+            loggedAt: loggedAt,
+            durationSeconds: max(0, loggedAt - startedAt),
+            completedExercises: wireExercises,
+            sessionNotes: notes
+        )
+    }
+
+    public var completedSetCount: Int {
+        exercises.reduce(0) { $0 + $1.sets.count(where: \.completed) }
+    }
+}
