@@ -37,6 +37,15 @@ public struct WorkoutDay: Codable, Identifiable, Sendable {
     public let targetMuscleGroups: [String]
     public var exerciseGroups: [ExerciseGroup]
 
+    public init(dayNumber: Int, dayTitle: String, dayFocus: String?,
+                targetMuscleGroups: [String], exerciseGroups: [ExerciseGroup]) {
+        self.dayNumber = dayNumber
+        self.dayTitle = dayTitle
+        self.dayFocus = dayFocus
+        self.targetMuscleGroups = targetMuscleGroups
+        self.exerciseGroups = exerciseGroups
+    }
+
     enum CodingKeys: String, CodingKey {
         case dayNumber = "day_number"
         case dayTitle = "day_title"
@@ -58,6 +67,13 @@ public struct ExerciseGroup: Codable, Identifiable, Sendable {
     public let targetRegion: String?
     public var exercises: [StructuredExercise]
 
+    public init(category: GroupCategory, targetRegion: String?,
+                exercises: [StructuredExercise]) {
+        self.category = category
+        self.targetRegion = targetRegion
+        self.exercises = exercises
+    }
+
     enum CodingKeys: String, CodingKey {
         case category
         case targetRegion = "target_region"
@@ -77,6 +93,21 @@ public struct StructuredExercise: Codable, Identifiable, Sendable {
     public let isMainLift: Bool
     public var volume: PrescribedVolume
     public let guide: CoachingGuide?
+
+    public init(exerciseId: String, canonicalNameKo: String, canonicalNameEn: String,
+                equipment: EquipmentType, primaryMuscle: String,
+                secondaryMuscles: [String], isMainLift: Bool,
+                volume: PrescribedVolume, guide: CoachingGuide?) {
+        self.exerciseId = exerciseId
+        self.canonicalNameKo = canonicalNameKo
+        self.canonicalNameEn = canonicalNameEn
+        self.equipment = equipment
+        self.primaryMuscle = primaryMuscle
+        self.secondaryMuscles = secondaryMuscles
+        self.isMainLift = isMainLift
+        self.volume = volume
+        self.guide = guide
+    }
 
     enum CodingKeys: String, CodingKey {
         case exerciseId = "exercise_id"
@@ -100,6 +131,19 @@ public struct PrescribedVolume: Codable, Sendable {
     public var restSeconds: Int?
     public var weightGuidance: String?
     public var rpeTarget: Double?
+
+    public init(minSets: Int, maxSets: Int, minReps: Int, maxReps: Int?,
+                repType: RepType, restSeconds: Int?, weightGuidance: String?,
+                rpeTarget: Double?) {
+        self.minSets = minSets
+        self.maxSets = maxSets
+        self.minReps = minReps
+        self.maxReps = maxReps
+        self.repType = repType
+        self.restSeconds = restSeconds
+        self.weightGuidance = weightGuidance
+        self.rpeTarget = rpeTarget
+    }
 
     public var volumeDisplayString: String {
         let setsStr = minSets == maxSets ? "\(minSets)세트" : "\(minSets)-\(maxSets)세트"
