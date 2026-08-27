@@ -16,8 +16,18 @@ enum PreviewFixtures {
             let body: String
 
             switch true {
+            case path.hasSuffix("/programs/merge"):
+                body = mergeResponse
+            case path.contains("/next-session"):
+                body = nextSessionRecommendation
+            case path.hasSuffix("/sessions") && request.httpMethod == "GET":
+                body = sessionList
             case path.hasSuffix("/programs"):
                 body = programList
+            case path.contains("/programs/") && request.httpMethod == "PUT":
+                body = updateProgramResponse
+            case path.contains("/programs/") && request.httpMethod == "DELETE":
+                body = #"{"success":true,"message":"Program deleted"}"#
             case path.contains("/programs/"):
                 body = programDetail
             case path.contains("/jobs/"):
@@ -340,6 +350,188 @@ enum PreviewFixtures {
             "사이드 레터럴 레이즈 세트 수가 영상에서 불명확합니다"
           ],
           "audit_notes": "영상 자막에 중량 정보가 없어 중량 필드를 비워 두었습니다."
+        }
+      }
+    }
+    """#
+
+    static let sessionList = #"""
+    {
+      "count": 2,
+      "sessions": [
+        {
+          "session_id": "session_demo_1",
+          "program_id": "che-dan-sil-ppl-routine-part2",
+          "day_number": 1,
+          "logged_at": 1771982600,
+          "duration_seconds": 3120,
+          "session_notes": "가슴 자극 아주 좋았음. 다음 주 82.5kg 증량 도전.",
+          "volume_analytics": {
+            "total_volume_kg": 4320.0,
+            "total_sets_completed": 9,
+            "total_reps_completed": 80,
+            "exercise_breakdown": [
+              {
+                "exercise_id": "bench_press",
+                "exercise_name": "바벨 벤치프레스",
+                "volume_kg": 3200.0,
+                "completed_sets": 5,
+                "completed_reps": 40,
+                "top_set_weight_kg": 80.0,
+                "estimated_1rm_kg": 106.7
+              },
+              {
+                "exercise_id": "incline_db_press",
+                "exercise_name": "인클라인 덤벨 프레스",
+                "volume_kg": 1120.0,
+                "completed_sets": 4,
+                "completed_reps": 40,
+                "top_set_weight_kg": 28.0,
+                "estimated_1rm_kg": 37.3
+              }
+            ]
+          },
+          "completed_exercises": [
+            {
+              "exercise_id": "bench_press",
+              "exercise_name": "바벨 벤치프레스",
+              "sets": [
+                { "set_number": 1, "weight_kg": 80.0, "reps": 8, "rpe": 8.0, "completed": true },
+                { "set_number": 2, "weight_kg": 80.0, "reps": 8, "rpe": 8.0, "completed": true },
+                { "set_number": 3, "weight_kg": 80.0, "reps": 8, "rpe": 8.5, "completed": true },
+                { "set_number": 4, "weight_kg": 80.0, "reps": 8, "rpe": 9.0, "completed": true },
+                { "set_number": 5, "weight_kg": 80.0, "reps": 8, "rpe": 9.5, "completed": true }
+              ]
+            },
+            {
+              "exercise_id": "incline_db_press",
+              "exercise_name": "인클라인 덤벨 프레스",
+              "sets": [
+                { "set_number": 1, "weight_kg": 28.0, "reps": 10, "rpe": 8.0, "completed": true },
+                { "set_number": 2, "weight_kg": 28.0, "reps": 10, "rpe": 8.0, "completed": true },
+                { "set_number": 3, "weight_kg": 28.0, "reps": 10, "rpe": 8.5, "completed": true },
+                { "set_number": 4, "weight_kg": 28.0, "reps": 10, "rpe": 9.0, "completed": true }
+              ]
+            }
+          ]
+        },
+        {
+          "session_id": "session_demo_2",
+          "program_id": "che-dan-sil-ppl-routine-part2",
+          "day_number": 2,
+          "logged_at": 1771896200,
+          "duration_seconds": 2880,
+          "session_notes": "등 하부 타겟 완료. 데드리프트 안정적.",
+          "volume_analytics": {
+            "total_volume_kg": 3850.0,
+            "total_sets_completed": 8,
+            "total_reps_completed": 48,
+            "exercise_breakdown": [
+              {
+                "exercise_id": "deadlift",
+                "exercise_name": "컨벤셔널 데드리프트",
+                "volume_kg": 3100.0,
+                "completed_sets": 4,
+                "completed_reps": 20,
+                "top_set_weight_kg": 155.0,
+                "estimated_1rm_kg": 180.0
+              },
+              {
+                "exercise_id": "pullup",
+                "exercise_name": "풀업",
+                "volume_kg": 750.0,
+                "completed_sets": 4,
+                "completed_reps": 28,
+                "top_set_weight_kg": 0.0,
+                "estimated_1rm_kg": 0.0
+              }
+            ]
+          },
+          "completed_exercises": [
+            {
+              "exercise_id": "deadlift",
+              "exercise_name": "컨벤셔널 데드리프트",
+              "sets": [
+                { "set_number": 1, "weight_kg": 140.0, "reps": 5, "rpe": 7.5, "completed": true },
+                { "set_number": 2, "weight_kg": 150.0, "reps": 5, "rpe": 8.0, "completed": true },
+                { "set_number": 3, "weight_kg": 155.0, "reps": 5, "rpe": 8.5, "completed": true },
+                { "set_number": 4, "weight_kg": 155.0, "reps": 5, "rpe": 9.0, "completed": true }
+              ]
+            },
+            {
+              "exercise_id": "pullup",
+              "exercise_name": "풀업",
+              "sets": [
+                { "set_number": 1, "weight_kg": 0.0, "reps": 8, "rpe": 8.0, "completed": true },
+                { "set_number": 2, "weight_kg": 0.0, "reps": 7, "rpe": 8.5, "completed": true },
+                { "set_number": 3, "weight_kg": 0.0, "reps": 7, "rpe": 9.0, "completed": true },
+                { "set_number": 4, "weight_kg": 0.0, "reps": 6, "rpe": 9.5, "completed": true }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+    """#
+
+    static let nextSessionRecommendation = #"""
+    {
+      "success": true,
+      "program_id": "che-dan-sil-ppl-routine-part2",
+      "day_number": 1,
+      "day_title": "Day 1: 푸쉬",
+      "overload_summary": "지난주 벤치프레스 12회 완료로 +2.5kg 증량(82.5kg) 추천",
+      "exercise_recommendations": [
+        {
+          "exercise_id": "bench_press",
+          "exercise_name": "바벨 벤치프레스",
+          "last_weight_kg": 80.0,
+          "recommended_weight_kg": 82.5,
+          "target_sets": 5,
+          "target_reps": "8-10 reps",
+          "target_rpe": 8.5,
+          "progression_note": "지난 세션 80kg x 12회 RPE 7.5를 초과 달성했으므로 +2.5kg 증량합니다."
+        },
+        {
+          "exercise_id": "incline_db_press",
+          "exercise_name": "인클라인 덤벨 프레스",
+          "last_weight_kg": 28.0,
+          "recommended_weight_kg": 30.0,
+          "target_sets": 4,
+          "target_reps": "10-12 reps",
+          "target_rpe": 8.5,
+          "progression_note": "목표 반복수 12회를 채웠으므로 덤벨 30kg으로 증량 도전하세요."
+        }
+      ]
+    }
+    """#
+
+    static let mergeResponse = #"""
+    {
+      "success": true,
+      "merged_program_id": "che-dan-sil-merged-all",
+      "program": {
+        "program_id": "che-dan-sil-merged-all",
+        "title": "체단실 통합 3분할 루틴 (Part 1-3 완결)",
+        "split_type": "PPL (Push/Pull/Legs)",
+        "creator": "che_dan_sil",
+        "program_data": {
+          "days": []
+        }
+      }
+    }
+    """#
+
+    static let updateProgramResponse = #"""
+    {
+      "success": true,
+      "program": {
+        "program_id": "che-dan-sil-ppl-routine-part2",
+        "title": "수정된 체단실 루틴",
+        "split_type": "3-Day Split",
+        "creator": "che_dan_sil",
+        "program_data": {
+          "days": []
         }
       }
     }

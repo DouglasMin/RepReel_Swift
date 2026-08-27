@@ -32,9 +32,10 @@ struct AddReelSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("분석 시작") {
                         isSubmitting = true
+                        let targetURL = url
+                        dismiss()
                         Task {
-                            await store.ingest(url: url)
-                            dismiss()
+                            await store.ingest(url: targetURL)
                         }
                     }
                     .disabled(!isValid || isSubmitting)
