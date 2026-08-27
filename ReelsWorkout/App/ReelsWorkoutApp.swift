@@ -19,7 +19,7 @@ struct ReelsWorkoutApp: App {
         WindowGroup {
             switch bootstrap {
             case .success(let environment):
-                LibraryView()
+                AppRootView()
                     .environment(environment)
             case .failure(let error):
                 ConfigurationErrorView(error: error)

@@ -17,7 +17,15 @@ generate:
 build:
 	xcodebuild build -project $(PROJECT) -scheme $(SCHEME) \
 		-destination 'platform=iOS Simulator,name=$(DEVICE)' \
+		-derivedDataPath build \
 		CODE_SIGNING_ALLOWED=NO | xcbeautify || true
+
+## Build, install, and launch the app in the simulator (like npm run dev).
+run: build
+	@xcrun simctl boot "$(DEVICE)" 2>/dev/null || true
+	@open -a Simulator
+	@xcrun simctl install booted build/Build/Products/Debug-iphonesimulator/ReelsWorkout.app
+	@xcrun simctl launch --terminate-running-process booted com.dongik.repreel
 
 ## Fast feedback loop — ReelsKit only, no simulator required.
 unit:

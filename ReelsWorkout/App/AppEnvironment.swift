@@ -20,12 +20,14 @@ final class AppEnvironment {
     /// The workout in progress, or nil. The bar's existence is derived from this
     /// rather than a separate flag that could drift.
     var workout: WorkoutSessionStore?
+    var isWorkoutExpanded: Bool = false
 
     /// True when starting a new workout would destroy an existing one — the
     /// server keeps a single draft per user, so this needs a confirmation.
     var hasWorkoutInProgress: Bool { workout != nil }
 
     func startWorkout(programId: String, day: WorkoutDay) {
+        isWorkoutExpanded = true
         workout = WorkoutSessionStore(
             client: client,
             draft: .seed(programId: programId, day: day,
@@ -39,11 +41,15 @@ final class AppEnvironment {
         startWorkout(programId: programId, day: day)
     }
 
-    func endWorkout() { workout = nil }
+    func endWorkout() {
+        workout = nil
+        isWorkoutExpanded = false
+    }
 
     /// Called on foreground. Does nothing if a workout is already in memory.
     func restoreWorkoutIfNeeded() async {
         guard workout == nil else { return }
+        isWorkoutExpanded = false
         workout = await WorkoutSessionStore.resume(client: client)
     }
 
@@ -66,6 +72,10 @@ final class AppEnvironment {
         self.config = config
         self.pendingJobs = pendingJobs
         self.identity = identity
+        
+        if let devEmail = config.developmentUserEmail, !devEmail.isEmpty {
+            identity.email = devEmail
+        }
         self.userEmail = identity.email ?? config.developmentUserEmail
 
         // Read the email lazily so signing in mid-session does not need a rebuild.
@@ -74,8 +84,5 @@ final class AppEnvironment {
         self.client = APIClient(config: config, transport: transport) {
             emailStore.email ?? fallback
         }
-
-        // Persist the dev fallback so the share extension can authenticate too.
-        if identity.email == nil { identity.email = config.developmentUserEmail }
     }
 }
