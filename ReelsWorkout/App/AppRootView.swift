@@ -9,6 +9,25 @@ struct AppRootView: View {
     @State private var selectedTab = 0
 
     var body: some View {
+        Group {
+            if environment.isSignedIn {
+                mainContent
+            } else {
+                SignInView()
+            }
+        }
+        .animation(.easeInOut(duration: 0.35), value: environment.isSignedIn)
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task {
+                    await environment.checkAppleCredentialState()
+                    await environment.restoreWorkoutIfNeeded()
+                }
+            }
+        }
+    }
+
+    private var mainContent: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $selectedTab) {
                 LibraryView()
@@ -52,11 +71,6 @@ struct AppRootView: View {
             }
         }
         .animation(.spring(duration: 0.4, bounce: 0), value: environment.workout == nil)
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                Task { await environment.restoreWorkoutIfNeeded() }
-            }
-        }
     }
 
     private func isFinished(_ workout: WorkoutSessionStore) -> Bool {

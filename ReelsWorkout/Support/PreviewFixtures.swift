@@ -28,6 +28,10 @@ enum PreviewFixtures {
                 body = updateProgramResponse
             case path.contains("/programs/") && request.httpMethod == "DELETE":
                 body = #"{"success":true,"message":"Program deleted"}"#
+            case path.contains("/sessions/") && request.httpMethod == "DELETE":
+                body = #"{"success":true,"message":"Session deleted"}"#
+            case path.contains("/sessions/") && request.httpMethod == "PUT":
+                body = #"{"success":true,"session_id":"s1"}"#
             case path.contains("/programs/"):
                 body = programDetail
             case path.contains("/jobs/"):
@@ -48,12 +52,15 @@ enum PreviewFixtures {
     /// A fully populated environment on a throwaway App Group suite, so demo
     /// state never mixes with the real one.
     @MainActor
-    static func environment(withPendingJob: Bool = true) -> AppEnvironment {
+    static func environment(withPendingJob: Bool = true, isSignedIn: Bool = false) -> AppEnvironment {
+        if let identity = UserIdentityStore(appGroupID: "group.demo.reelsworkout"), !isSignedIn {
+            identity.clear()
+        }
         let config = AppConfig(
             apiHost: "demo.local",
             appSecret: "demo",
             appGroupID: "group.demo.reelsworkout",
-            developmentUserEmail: "demo@example.com"
+            developmentUserEmail: isSignedIn ? "demo@example.com" : nil
         )
         // `init(config:transport:)` only throws if the App Group is unusable.
         let environment = try! AppEnvironment(config: config, transport: FixtureTransport())

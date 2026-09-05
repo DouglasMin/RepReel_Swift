@@ -11,6 +11,8 @@ struct LibraryView: View {
     @State private var programToDelete: ProgramSummary?
     @State private var path: [String] = []
 
+    @State private var isShowingSettings = false
+
     var body: some View {
         NavigationStack(path: $path) {
             Group {
@@ -23,11 +25,23 @@ struct LibraryView: View {
             .navigationTitle("내 릴스 루틴")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    if let store, store.programs.count >= 2 {
+                    HStack(spacing: 12) {
                         Button {
-                            isMergingPrograms = true
+                            isShowingSettings = true
                         } label: {
-                            Label("시리즈 병합", systemImage: "arrow.triangle.merge")
+                            Image(systemName: "gearshape")
+                                .font(.body.weight(.medium))
+                        }
+                        .accessibilityLabel("설정 및 프로필")
+
+                        if let store, store.programs.count >= 2 {
+                            Button {
+                                isMergingPrograms = true
+                            } label: {
+                                Image(systemName: "arrow.triangle.merge")
+                                    .font(.body.weight(.medium))
+                            }
+                            .accessibilityLabel("시리즈 병합")
                         }
                     }
                 }
@@ -40,6 +54,9 @@ struct LibraryView: View {
                     }
                     .accessibilityLabel("릴스 추가")
                 }
+            }
+            .sheet(isPresented: $isShowingSettings) {
+                SettingsSheet()
             }
             .sheet(isPresented: $isAddingReel) {
                 if let store { AddReelSheet(store: store) }
@@ -209,37 +226,74 @@ private struct HeroHeaderCard: View {
     let programCount: Int
 
     var body: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("맞춤 릴스 워크아웃")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.primary)
-                Text("인스타그램에서 추출된 \(programCount)개의 루틴")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        ZStack(alignment: .bottomTrailing) {
+            // Ambient glow in corner
+            Circle()
+                .fill(Theme.brandGradient)
+                .frame(width: 140, height: 140)
+                .blur(radius: 40)
+                .opacity(0.18)
+                .offset(x: 30, y: 30)
+
+            HStack(alignment: .center, spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Theme.brandPrimary)
+                        Text("AI REELS & SHORTS")
+                            .font(.system(size: 10, weight: .black, design: .rounded))
+                            .foregroundStyle(Theme.brandPrimary)
+                            .tracking(1.2)
+                    }
+
+                    Text("맞춤 릴스 워크아웃")
+                        .font(.title3.weight(.black))
+                        .foregroundStyle(.primary)
+
+                    Text("인스타그램과 유튜브에서 추출된 \(programCount)개의 루틴")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 0)
+
+                VStack(spacing: 2) {
+                    Text("\(programCount)")
+                        .font(.system(size: 26, weight: .black, design: .rounded))
+                        .foregroundStyle(Theme.brandPrimary)
+                        .monospacedDigit()
+                    Text("루틴 보관")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Theme.subcardBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(Theme.brandPrimary.opacity(0.2), lineWidth: 1)
+                )
             }
-            Spacer()
-            HStack(spacing: 6) {
-                Image(systemName: "flame.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.brandGradient)
-                Text("\(programCount)개 보관")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Theme.brandPrimary)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Theme.brandPrimary.opacity(0.12), in: .capsule)
+            .padding(16)
         }
-        .padding(16)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Theme.cardBackground)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Theme.brandPrimary.opacity(0.15), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Theme.brandPrimary.opacity(0.4), Color.primary.opacity(0.06)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.2
+                        )
                 )
-                .shadow(color: .black.opacity(0.04), radius: 8, y: 3)
+                .shadow(color: Theme.brandPrimary.opacity(0.08), radius: 12, y: 4)
+                .shadow(color: .black.opacity(0.03), radius: 4, y: 2)
         )
     }
 }
@@ -251,18 +305,20 @@ private struct PendingJobCard: View {
     var body: some View {
         HStack(spacing: 14) {
             ZStack {
-                Circle()
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Theme.brandGradient)
-                    .frame(width: 42, height: 42)
+                    .frame(width: 44, height: 44)
+                    .shadow(color: Theme.brandPrimary.opacity(0.4), radius: 8, y: 2)
+
                 Image(systemName: "sparkles")
-                    .font(.subheadline.weight(.bold))
+                    .font(.title3.weight(.bold))
                     .foregroundStyle(.white)
             }
             .shimmering()
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text("AI 루틴 추출 중…")
+                    Text("AI 운동 루틴 추출 중…")
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(.primary)
 
@@ -289,13 +345,13 @@ private struct PendingJobCard: View {
         }
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(Theme.cardBackground)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(Theme.brandPrimary.opacity(0.3), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(Theme.brandPrimary.opacity(0.35), lineWidth: 1.2)
                 )
-                .shadow(color: Theme.brandPrimary.opacity(0.06), radius: 8, y: 3)
+                .shadow(color: Theme.brandPrimary.opacity(0.10), radius: 10, y: 3)
         )
     }
 }
@@ -307,56 +363,60 @@ private struct ProgramCard: View {
         guard let split = program.splitType else { return Theme.brandPrimary }
         switch split {
         case .ppl: return Theme.brandPrimary
-        case .upperLower: return Color.blue
-        case .broSplit: return Theme.brandPurple
-        case .fullBody: return Theme.brandGreen
-        case .custom: return Theme.brandTeal
+        case .upperLower: return Color(hex: "#8B5CF6")
+        case .broSplit: return Color(hex: "#EC4899")
+        case .fullBody: return Color(hex: "#10B981")
+        case .custom: return Color(hex: "#06B6D4")
+        }
+    }
+
+    private var splitIcon: String {
+        guard let split = program.splitType else { return "figure.strengthtraining.traditional" }
+        switch split {
+        case .ppl: return "flame.fill"
+        case .upperLower: return "figure.cross.training"
+        case .broSplit: return "figure.arms.open"
+        case .fullBody: return "figure.strengthtraining.traditional"
+        case .custom: return "bolt.fill"
         }
     }
 
     var body: some View {
         HStack(spacing: 14) {
-            // Instagram / Workout Avatar Badge
+            // Media Cover Artwork Tile
             ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.orange, Color.pink, Color.purple],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 46, height: 46)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Theme.splitGradient(for: program.splitType?.rawValue))
+                    .frame(width: 52, height: 52)
+                    .shadow(color: splitColor.opacity(0.3), radius: 6, y: 2)
 
-                Circle()
-                    .fill(Theme.cardBackground)
-                    .frame(width: 42, height: 42)
-
-                Image(systemName: "figure.strengthtraining.traditional")
-                    .font(.system(size: 20))
-                    .foregroundStyle(Theme.brandPrimary)
+                Image(systemName: splitIcon)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.white)
             }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(program.title)
-                    .font(.headline.weight(.semibold))
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
 
                 HStack(spacing: 8) {
                     if let split = program.splitType {
                         Text(split.rawValue)
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(splitColor)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 2.5)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
                             .background(splitColor.opacity(0.12), in: .capsule)
                     }
 
                     if let creator = program.creator, !creator.isEmpty {
-                        HStack(spacing: 3) {
+                        HStack(spacing: 4) {
                             Image(systemName: "camera.fill")
                                 .font(.system(size: 9))
+                                .foregroundStyle(.secondary)
                             Text(creator)
                         }
                         .font(.caption2.weight(.medium))
@@ -369,19 +429,11 @@ private struct ProgramCard: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary.opacity(0.5))
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary.opacity(0.4))
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Theme.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.03), radius: 6, y: 2)
-        )
+        .premiumCard(glowColor: splitColor)
     }
 }
 

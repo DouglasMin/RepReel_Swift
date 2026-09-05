@@ -24,10 +24,6 @@ struct ProgramDetailView: View {
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                 .listRowBackground(Color.clear)
 
-                if let audit = program.audit, audit.needsReview {
-                    Section { AuditBanner(audit: audit) }
-                }
-
                 // Days Section
                 ForEach(program.days) { day in
                     Section {
@@ -49,21 +45,6 @@ struct ProgramDetailView: View {
                                 .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                                 .listRowBackground(Color.clear)
                         }
-                    }
-                }
-
-                if let progression = program.progression {
-                    Section("점진적 과부하 가이드") {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(progression.overloadStrategy)
-                                .font(.subheadline)
-                            if let recovery = progression.recoveryGuidance {
-                                Text(recovery)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .padding(.vertical, 4)
                     }
                 }
             } else if let errorMessage {
@@ -155,71 +136,87 @@ struct ProgramDetailView: View {
 private struct ProgramHeroCard: View {
     let program: WorkoutProgramResponse
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(program.title)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(.primary)
+    private var splitColor: Color {
+        guard let split = program.splitType else { return Theme.brandPrimary }
+        switch split {
+        case .ppl: return Theme.brandPrimary
+        case .upperLower: return Color(hex: "#8B5CF6")
+        case .broSplit: return Color(hex: "#EC4899")
+        case .fullBody: return Color(hex: "#10B981")
+        case .custom: return Color(hex: "#06B6D4")
+        }
+    }
 
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            // Ambient glow
+            Circle()
+                .fill(Theme.splitGradient(for: program.splitType?.rawValue))
+                .frame(width: 130, height: 130)
+                .blur(radius: 45)
+                .opacity(0.18)
+                .offset(x: 30, y: 20)
+
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
                     if let creator = program.creator, !creator.isEmpty {
-                        HStack(spacing: 4) {
+                        HStack(spacing: 5) {
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 10))
+                                .font(.system(size: 10, weight: .bold))
                                 .foregroundStyle(Theme.brandPrimary)
                             Text(creator)
-                                .font(.caption.weight(.medium))
+                                .font(.caption.weight(.bold))
                                 .foregroundStyle(.secondary)
                         }
                     }
-                }
-                Spacer()
-            }
 
-            HStack(spacing: 8) {
-                if let split = program.splitType {
-                    Text(split.rawValue)
+                    Text(program.title)
+                        .font(.title2.weight(.black))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                }
+
+                HStack(spacing: 8) {
+                    if let split = program.splitType {
+                        Text(split.rawValue)
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(splitColor)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 4)
+                            .background(splitColor.opacity(0.12), in: .capsule)
+                    }
+
+                    if let cycle = program.cycleFrequency, !cycle.isEmpty {
+                        Label(cycle, systemImage: "repeat")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 4)
+                            .background(Color.primary.opacity(0.05), in: .capsule)
+                    }
+
+                    Text("\(program.days.count) Days")
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(Theme.brandPrimary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Theme.brandPrimary.opacity(0.12), in: .capsule)
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(Color.primary.opacity(0.06), in: .capsule)
                 }
 
-                if let cycle = program.cycleFrequency, !cycle.isEmpty {
-                    Label(cycle, systemImage: "repeat")
-                        .font(.caption2.weight(.medium))
+                if let overview = program.overview, !overview.isEmpty {
+                    Text(overview)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.subcardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
-
-                Text("\(program.days.count) Days")
-                    .font(.caption2.weight(.bold))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.primary.opacity(0.06), in: .capsule)
             }
-
-            if let overview = program.overview, !overview.isEmpty {
-                Text(overview)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(3)
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 10))
-            }
+            .padding(16)
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Theme.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Theme.brandPrimary.opacity(0.15), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.04), radius: 8, y: 3)
-        )
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .premiumCard(cornerRadius: 20, glowColor: splitColor)
     }
 }
 
@@ -230,31 +227,42 @@ private struct DayHeaderCard: View {
     let onStartTap: () -> Void
 
     var body: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(day.dayTitle)
-                    .font(.headline.weight(.bold))
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text("DAY \(day.dayNumber)")
+                        .font(.system(size: 11, weight: .black, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2.5)
+                        .background(Theme.brandGradient, in: .capsule)
+
+                    Text(day.dayTitle)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.primary)
+                }
+
                 if let focus = day.dayFocus {
                     Text(focus)
-                        .font(.caption)
+                        .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
                 }
             }
 
-            Spacer()
+            Spacer(minLength: 0)
 
             Button(action: onStartTap) {
-                HStack(spacing: 5) {
+                HStack(spacing: 6) {
                     Image(systemName: "play.fill")
-                        .font(.caption2)
+                        .font(.caption.weight(.bold))
                     Text("운동 시작")
                         .font(.subheadline.weight(.bold))
                 }
                 .foregroundStyle(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 9)
                 .background(Theme.brandGradient, in: .capsule)
-                .shadow(color: Theme.brandPrimary.opacity(0.35), radius: 6, y: 2)
+                .shadow(color: Theme.brandPrimary.opacity(0.4), radius: 8, y: 3)
             }
             .buttonStyle(.plain)
         }
@@ -279,28 +287,26 @@ private struct ExerciseGroupCard: View {
 
                 if let region = group.targetRegion {
                     Text(region)
-                        .font(.caption.weight(.medium))
+                        .font(.caption.weight(.bold))
                         .foregroundStyle(.secondary)
                 }
+
+                Spacer()
+
+                Text("\(group.exercises.count)개 운동")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary.opacity(0.8))
             }
 
             ForEach(group.exercises) { exercise in
                 ExerciseRow(exercise: exercise)
                 if exercise.id != group.exercises.last?.id {
-                    Divider().opacity(0.4)
+                    Divider().opacity(0.3).padding(.vertical, 2)
                 }
             }
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Theme.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.03), radius: 6, y: 2)
-        )
+        .premiumCard(cornerRadius: 18, glowColor: Color(hex: group.category.badgeColorHex))
     }
 }
 
@@ -309,51 +315,57 @@ private struct ExerciseRow: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
+            // Equipment Tile
             ZStack {
-                Circle()
-                    .fill(Theme.brandPrimary.opacity(0.10))
-                    .frame(width: 36, height: 36)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Theme.brandPrimary.opacity(0.12))
+                    .frame(width: 40, height: 40)
+
                 Image(systemName: exercise.equipment.iconName)
-                    .font(.subheadline)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.brandPrimary)
             }
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(exercise.canonicalNameKo)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.subheadline.weight(.bold))
                         .foregroundStyle(.primary)
 
                     if !exercise.primaryMuscle.isEmpty {
                         Text(exercise.primaryMuscle)
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Theme.brandPrimary)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.primary.opacity(0.05), in: .capsule)
+                            .background(Theme.brandPrimary.opacity(0.08), in: .capsule)
                     }
                 }
 
                 HStack(spacing: 8) {
                     if let rest = exercise.volume.restDisplayString {
-                        Label(rest, systemImage: "timer")
+                        HStack(spacing: 3) {
+                            Image(systemName: "timer")
+                            Text(rest)
+                        }
                     }
                     if let rpe = exercise.volume.rpeTarget {
                         Text("RPE \(rpe, format: .number.precision(.fractionLength(0...1)))")
                     }
                 }
-                .font(.caption2)
+                .font(.caption2.weight(.medium))
                 .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 0)
 
+            // Volume Prescription Badge
             Text(exercise.volume.volumeDisplayString)
                 .font(.subheadline.monospacedDigit().weight(.bold))
                 .foregroundStyle(Theme.brandPrimary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Theme.brandPrimary.opacity(0.08), in: .capsule)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(Theme.brandPrimary.opacity(0.10), in: .capsule)
         }
         .padding(.vertical, 2)
     }

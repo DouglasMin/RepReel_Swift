@@ -23,6 +23,7 @@ final class WorkoutSessionStore {
     init(client: APIClient, draft: WorkoutDraft) {
         self.client = client
         self.draft = draft
+        WorkoutActivityManager.shared.startActivity(from: draft)
     }
 
     // MARK: - Mutations
@@ -84,6 +85,12 @@ final class WorkoutSessionStore {
         scheduleSave(immediate: true)
     }
 
+    /// Moves/reorders exercises within the workout.
+    func moveExercise(from source: IndexSet, to destination: Int) {
+        draft.moveExercise(from: source, to: destination)
+        scheduleSave(immediate: true)
+    }
+
     /// Updates the target rest duration for an exercise.
     func setRestSeconds(_ seconds: Int, exercise: Int) {
         guard draft.exercises.indices.contains(exercise) else { return }
@@ -93,6 +100,7 @@ final class WorkoutSessionStore {
     func dismissRest() {
         restEndsAt = nil
         cancelRestNotification()
+        WorkoutActivityManager.shared.update(from: draft, restEndsAt: nil)
     }
 
     /// Extends or decreases the ongoing rest timer by the specified number of seconds.
@@ -106,6 +114,7 @@ final class WorkoutSessionStore {
             restEndsAt = updated
             scheduleRestNotification(endsAt: updated)
         }
+        WorkoutActivityManager.shared.update(from: draft, restEndsAt: restEndsAt)
     }
 
     // MARK: - Notifications
@@ -137,6 +146,7 @@ final class WorkoutSessionStore {
     /// Trailing debounce: a burst of keystrokes becomes one request. Completing a
     /// set bypasses the wait.
     private func scheduleSave(immediate: Bool = false) {
+        WorkoutActivityManager.shared.update(from: draft, restEndsAt: restEndsAt)
         saveTask?.cancel()
         saveTask = Task { [weak self] in
             if !immediate {
@@ -256,6 +266,7 @@ extension WorkoutSessionStore {
     func finish(notes: String?) async {
         guard case .idle = finishState else { return }
         finishState = .saving
+        WorkoutActivityManager.shared.endActivity(immediate: true)
         let log = draft.makeSessionLog(loggedAt: Int(Date().timeIntervalSince1970),
                                        notes: notes)
         do {
@@ -269,6 +280,7 @@ extension WorkoutSessionStore {
     func discard() async {
         saveTask?.cancel()
         _ = await saveTask?.value
+        WorkoutActivityManager.shared.endActivity(immediate: true)
         _ = try? await client.discardActiveSession()
     }
 

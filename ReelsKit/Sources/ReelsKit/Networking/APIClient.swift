@@ -134,6 +134,20 @@ public struct APIClient: Sendable {
         return response.sessions
     }
 
+    @discardableResult
+    public func deleteSession(id: String) async throws -> Bool {
+        struct SessionDeleteResponse: Codable {
+            let success: Bool?
+            let message: String?
+        }
+        let response: SessionDeleteResponse = try await send(.delete, "/sessions/\(id)")
+        return response.success ?? true
+    }
+
+    public func updateSession(id: String, _ session: WorkoutSessionLog) async throws -> SessionCreateResponse {
+        try await send(.put, "/sessions/\(id)", body: session)
+    }
+
     // MARK: - Request plumbing
 
     enum Method: String {

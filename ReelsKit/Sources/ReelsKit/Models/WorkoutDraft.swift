@@ -155,6 +155,19 @@ public struct WorkoutDraft: Sendable {
             )
         }
     }
+
+    /// Reorders exercises within the workout draft.
+    public mutating func moveExercise(from source: IndexSet, to destination: Int) {
+        var items = exercises
+        let movingItems = source.sorted().map { items[$0] }
+        for index in source.sorted().reversed() {
+            items.remove(at: index)
+        }
+        let offset = source.filter { $0 < destination }.count
+        let targetIndex = destination - offset
+        items.insert(contentsOf: movingItems, at: max(0, min(targetIndex, items.count)))
+        exercises = items
+    }
 }
 extension WorkoutDraft {
     /// Every set is sent, finished or not, so resuming restores the full checklist.

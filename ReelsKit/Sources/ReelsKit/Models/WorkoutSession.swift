@@ -146,6 +146,29 @@ public struct SessionCreateResponse: Codable, Sendable {
         self.sessionId = sessionId
         self.session = session
     }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.success = try? container.decodeIfPresent(Bool.self, forKey: .success)
+        let directSessionId = try? container.decodeIfPresent(String.self, forKey: .sessionId)
+        if let nestedSession = try? container.decodeIfPresent(WorkoutSessionLog.self, forKey: .session) {
+            self.sessionId = directSessionId ?? nestedSession.sessionId
+            self.session = nestedSession
+        } else if let directSession = try? WorkoutSessionLog(from: decoder) {
+            self.sessionId = directSessionId ?? directSession.sessionId
+            self.session = directSession
+        } else {
+            self.sessionId = directSessionId
+            self.session = nil
+        }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(success, forKey: .success)
+        try container.encodeIfPresent(sessionId, forKey: .sessionId)
+        try container.encodeIfPresent(session, forKey: .session)
+    }
 }
 
 public struct SessionListResponse: Codable, Sendable {

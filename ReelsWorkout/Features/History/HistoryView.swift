@@ -14,6 +14,8 @@ struct HistoryView: View {
     @State private var displayMode: HistoryDisplayMode = .calendar
     @State private var selectedDate: Date = Date()
     @State private var visibleMonth: Date = Date()
+    @State private var sessionToDelete: WorkoutSessionLog?
+    @State private var confirmDelete = false
 
     var body: some View {
         NavigationStack {
@@ -41,6 +43,23 @@ struct HistoryView: View {
                     store = HistoryStore(client: environment.client)
                 }
                 await store?.loadHistory()
+            }
+            .confirmationDialog(
+                "운동 기록 삭제",
+                isPresented: $confirmDelete,
+                titleVisibility: .visible
+            ) {
+                Button("삭제", role: .destructive) {
+                    if let toDelete = sessionToDelete {
+                        Task {
+                            try? await store?.deleteSession(id: toDelete.sessionId ?? toDelete.id)
+                            sessionToDelete = nil
+                        }
+                    }
+                }
+                Button("취소", role: .cancel) { sessionToDelete = nil }
+            } message: {
+                Text("이 운동 기록을 삭제하시겠습니까?\n삭제된 기록은 복구할 수 없습니다.")
             }
         }
     }
@@ -127,8 +146,16 @@ struct HistoryView: View {
                 .listRowBackground(Color.clear)
             } else {
                 ForEach(daySessions) { session in
-                    NavigationLink(destination: SessionDetailView(session: session)) {
+                    NavigationLink(destination: SessionDetailView(session: session, store: store)) {
                         SessionHistoryCard(session: session)
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            sessionToDelete = session
+                            confirmDelete = true
+                        } label: {
+                            Label("삭제", systemImage: "trash")
+                        }
                     }
                     .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                     .listRowBackground(Color.clear)
@@ -178,8 +205,16 @@ struct HistoryView: View {
             }
 
             ForEach(store.sessions) { session in
-                NavigationLink(destination: SessionDetailView(session: session)) {
+                NavigationLink(destination: SessionDetailView(session: session, store: store)) {
                     SessionHistoryCard(session: session)
+                }
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) {
+                        sessionToDelete = session
+                        confirmDelete = true
+                    } label: {
+                        Label("삭제", systemImage: "trash")
+                    }
                 }
                 .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 .listRowBackground(Color.clear)

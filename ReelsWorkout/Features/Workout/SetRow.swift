@@ -1,10 +1,7 @@
 import ReelsKit
 import SwiftUI
 
-/// One set. Press feedback fires on touch-*down*; the haptic generator is primed
-/// there too, so the tap and the tap-back land on the same frame.
-/// Identifies one text field across the whole workout, so the keyboard toolbar
-/// can step 이전/다음 between rows and exercises.
+/// One set row. Clean, high-contrast, minimalist design with clear touch targets.
 struct WorkoutFieldID: Hashable {
     enum Kind { case weight, reps }
     let exercise: Int
@@ -30,8 +27,6 @@ struct SetRow: View {
     @State private var repsText = ""
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private let haptic = UIImpactFeedbackGenerator(style: .medium)
-
     private var weightFieldID: WorkoutFieldID {
         WorkoutFieldID(exercise: exerciseIndex, set: setIndex, kind: .weight)
     }
@@ -42,67 +37,102 @@ struct SetRow: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
+                // Set Number
                 Text("\(set.setNumber)")
-                    .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .frame(width: 20)
+                    .font(.system(size: 14, weight: .black, design: .rounded))
+                    .foregroundStyle(set.completed ? Theme.brandPrimary : .secondary)
+                    .frame(width: 22, alignment: .leading)
 
-                stepper("−2.5") { adjustWeight(by: -2.5) }
-
-                field($weightText, placeholder: "kg", width: 62)
-                    .focused($focused, equals: weightFieldID)
-                    .onChange(of: weightText) { _, new in
-                        if focused == weightFieldID {
-                            onWeight(Double(new))
+                // Weight Input Field
+                HStack(spacing: 3) {
+                    TextField("0", text: $weightText)
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.center)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .focused($focused, equals: weightFieldID)
+                        .frame(width: 52)
+                        .onChange(of: weightText) { _, new in
+                            if focused == weightFieldID {
+                                onWeight(Double(new))
+                            }
                         }
-                    }
-                    .onSubmit {
-                        commitWeight()
-                    }
-
-                stepper("+2.5") { adjustWeight(by: 2.5) }
-
-                TextField("회", text: $repsText)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.center)
-                    .font(.body.monospacedDigit())
-                    .frame(width: 48)
-                    .padding(.vertical, 6)
-                    .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 8))
-                    .focused($focused, equals: repsFieldID)
-                    .onChange(of: repsText) { _, new in
-                        if focused == repsFieldID, let r = Int(new) {
-                            onReps(r)
+                        .onSubmit {
+                            commitWeight()
                         }
-                    }
+                    Text("kg")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(focused == weightFieldID ? Theme.brandPrimary.opacity(0.10) : Color.primary.opacity(0.05))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(focused == weightFieldID ? Theme.brandPrimary.opacity(0.6) : Color.clear, lineWidth: 1.5)
+                        )
+                )
 
-                Spacer(minLength: 4)
+                // Reps Input Field
+                HStack(spacing: 3) {
+                    TextField("0", text: $repsText)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.center)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .focused($focused, equals: repsFieldID)
+                        .frame(width: 42)
+                        .onChange(of: repsText) { _, new in
+                            if focused == repsFieldID, let r = Int(new) {
+                                onReps(r)
+                            }
+                        }
+                    Text("회")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(focused == repsFieldID ? Theme.brandPrimary.opacity(0.10) : Color.primary.opacity(0.05))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(focused == repsFieldID ? Theme.brandPrimary.opacity(0.6) : Color.clear, lineWidth: 1.5)
+                        )
+                )
 
+                Spacer(minLength: 0)
+
+                // RPE Toggle Button
                 Button(action: onToggleRPE) {
                     Text(set.rpe.map { "RPE \($0.formatted(.number.precision(.fractionLength(0...1))))" } ?? "RPE")
-                        .font(.caption2.weight(.medium))
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
                         .foregroundStyle(set.rpe == nil ? .secondary : Theme.brandPrimary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .background(set.rpe != nil ? Theme.brandPrimary.opacity(0.12) : Color.clear, in: .capsule)
-                        .frame(minHeight: 44)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .background(set.rpe != nil ? Theme.brandPrimary.opacity(0.12) : Color.primary.opacity(0.04), in: .capsule)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
 
+                // Completion Circle
                 completionCircle
             }
 
             if isRPEExpanded { rpeScale }
         }
-        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
         .background(
-            // Fills outward from the circle, so the motion starts where the finger did.
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Theme.brandPrimary.opacity(set.completed ? 0.08 : 0))
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(set.completed ? Theme.brandPrimary.opacity(0.08) : Color.clear)
         )
         .sensoryFeedback(.success, trigger: set.completed)
+        .sensoryFeedback(.selection, trigger: weightText)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("세트 \(set.setNumber): \(set.weightKg.map { "\($0) 킬로그램" } ?? "체중") \(set.reps)회")
         .accessibilityValue(set.completed ? "완료됨" : "미완료")
@@ -113,7 +143,7 @@ struct SetRow: View {
         }
         .onChange(of: set.weightKg) { _, new in
             let text = new.map { $0.formatted(.number.precision(.fractionLength(0...1))) } ?? ""
-            if text != weightText { weightText = text } // reflect carry-down
+            if text != weightText { weightText = text }
         }
         .onChange(of: focused) { old, new in
             if old == weightFieldID && new != weightFieldID {
@@ -129,20 +159,21 @@ struct SetRow: View {
     private var completionCircle: some View {
         ZStack {
             Circle()
-                .strokeBorder(set.completed ? Theme.brandPrimary : .secondary.opacity(0.4),
+                .strokeBorder(set.completed ? Theme.brandPrimary : .secondary.opacity(0.35),
                               lineWidth: 2)
                 .background(Circle().fill(set.completed ? Theme.brandPrimary : .clear))
-                .frame(width: 32, height: 32)
+                .frame(width: 36, height: 36)
+                .shadow(color: set.completed ? Theme.brandPrimary.opacity(0.35) : .clear, radius: 4, y: 1)
 
             Checkmark(progress: set.completed ? 1 : 0)
-                .stroke(.white, style: .init(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
-                .frame(width: 14, height: 12)
+                .stroke(.white, style: .init(lineWidth: 2.8, lineCap: .round, lineJoin: .round))
+                .frame(width: 15, height: 13)
         }
         .frame(minWidth: 44, minHeight: 44)
         .contentShape(Rectangle())
-        .scaleEffect(isPressed ? 0.92 : 1)
+        .scaleEffect(isPressed ? 0.88 : (set.completed ? 1.05 : 1.0))
         .animation(reduceMotion ? .easeOut(duration: 0.15)
-                                : .spring(duration: 0.3, bounce: 0.2), value: set.completed)
+                                : .spring(duration: 0.35, bounce: 0.25), value: set.completed)
         .animation(.easeOut(duration: 0.08), value: isPressed)
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -150,60 +181,40 @@ struct SetRow: View {
                     let inside = CGRect(x: 0, y: 0, width: 44, height: 44).contains(value.location)
                     if inside != isPressed {
                         isPressed = inside
-                        if inside { haptic.prepare() }
                     }
                 }
-                .onEnded { _ in
-                    if isPressed { haptic.impactOccurred(); onToggle() }
+                .onEnded { value in
+                    let inside = CGRect(x: 0, y: 0, width: 44, height: 44).contains(value.location)
                     isPressed = false
+                    if inside {
+                        onToggle()
+                    }
                 }
         )
     }
 
     private var rpeScale: some View {
         HStack(spacing: 4) {
-            ForEach(Array(stride(from: 6.0, through: 10.0, by: 0.5)), id: \.self) { value in
+            ForEach([6.0, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0], id: \.self) { value in
                 Button {
                     onRPE(set.rpe == value ? nil : value)
                 } label: {
                     Text(value.formatted(.number.precision(.fractionLength(0...1))))
-                        .font(.caption2.monospacedDigit().weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: 34)
-                        .background(set.rpe == value ? Theme.brandPrimary.opacity(0.20) : Color.primary.opacity(0.04),
-                                    in: .rect(cornerRadius: 8))
-                        .foregroundStyle(set.rpe == value ? Theme.brandPrimary : .primary)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(set.rpe == value ? .white : .primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .background(
+                            set.rpe == value ? Theme.brandPrimary : Color.primary.opacity(0.06),
+                            in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        )
                 }
                 .buttonStyle(.plain)
             }
         }
-        .transition(.opacity)
-        .animation(.spring(duration: 0.3, bounce: 0), value: isRPEExpanded)
-    }
-
-    private func stepper(_ label: String, action: @escaping () -> Void) -> some View {
-        Button(label, action: action)
-            .font(.caption2.monospacedDigit().weight(.medium))
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.capsule)
-            .controlSize(.mini)
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
-    }
-
-    private func field(_ text: Binding<String>, placeholder: String, width: CGFloat) -> some View {
-        TextField(placeholder, text: text)
-            .keyboardType(.decimalPad)
-            .multilineTextAlignment(.center)
-            .font(.body.monospacedDigit())
-            .frame(width: width, height: 34)
-            .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 8))
-    }
-
-    private func adjustWeight(by delta: Double) {
-        let current = Double(weightText) ?? 0
-        let next = max(0, current + delta)
-        weightText = next.formatted(.number.precision(.fractionLength(0...1)))
-        onCommitWeight(next)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 4)
+        .transition(.opacity.combined(with: .move(edge: .top)))
     }
 }
 
@@ -223,21 +234,3 @@ private struct Checkmark: Shape {
         return path.trimmedPath(from: 0, to: progress)
     }
 }
-#if DEBUG
-#Preview("SetRow") {
-    @Previewable @State var set = DraftSet(setNumber: 1, weightKg: 80, reps: 10)
-    @Previewable @State var rpeOpen = false
-    @Previewable @FocusState var focused: WorkoutFieldID?
-
-    List {
-        SetRow(set: set, exerciseIndex: 0, setIndex: 0, isRPEExpanded: rpeOpen,
-               focused: $focused,
-               onToggle: { set.completed.toggle() },
-               onWeight: { set.weightKg = $0 },
-               onCommitWeight: { set.weightKg = $0 },
-               onReps: { set.reps = $0 },
-               onRPE: { set.rpe = $0 },
-               onToggleRPE: { rpeOpen.toggle() })
-    }
-}
-#endif

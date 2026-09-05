@@ -41,6 +41,41 @@ public final class HistoryStore {
         }
     }
 
+    public func deleteSession(id: String) async throws {
+        // Optimistically remove from local state
+        sessions.removeAll { ($0.sessionId ?? $0.id) == id }
+        do {
+            try await client.deleteSession(id: id)
+        } catch {
+            #if DEBUG
+            print("[HistoryStore] Failed to delete session on server: \(error)")
+            #endif
+            // Reload to restore consistent server state if failed
+            await loadHistory()
+            throw error
+        }
+    }
+
+    public func updateSession(_ updated: WorkoutSessionLog) async throws {
+        let sid = updated.sessionId ?? updated.id
+        if let index = sessions.firstIndex(where: { ($0.sessionId ?? $0.id) == sid }) {
+            sessions[index] = updated
+        }
+        do {
+            let res = try await client.updateSession(id: sid, updated)
+            if let serverEcho = res.session,
+               let index = sessions.firstIndex(where: { ($0.sessionId ?? $0.id) == sid }) {
+                sessions[index] = serverEcho
+            }
+        } catch {
+            #if DEBUG
+            print("[HistoryStore] Failed to update session on server: \(error)")
+            #endif
+            await loadHistory()
+            throw error
+        }
+    }
+
     // MARK: - Aggregated Analytics
 
     public var totalVolumeKg: Double {

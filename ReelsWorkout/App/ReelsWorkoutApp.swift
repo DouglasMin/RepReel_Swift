@@ -5,13 +5,6 @@ struct ReelsWorkoutApp: App {
     private let bootstrap: Result<AppEnvironment, any Error>
 
     init() {
-        #if DEBUG
-        // `-demo` runs the whole app against canned responses — no backend needed.
-        if ProcessInfo.processInfo.arguments.contains("-demo") {
-            bootstrap = .success(PreviewFixtures.environment())
-            return
-        }
-        #endif
         bootstrap = AppEnvironment.bootstrap()
     }
 

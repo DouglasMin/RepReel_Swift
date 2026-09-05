@@ -68,7 +68,9 @@ public struct PendingJobStore: @unchecked Sendable {
 ///
 /// `@unchecked` because `UserDefaults` is thread-safe but not marked `Sendable`.
 public struct UserIdentityStore: @unchecked Sendable {
-    private static let key = "user_email"
+    private static let emailKey = "user_email"
+    private static let userIdKey = "apple_user_id"
+    private static let userNameKey = "user_full_name"
 
     private let defaults: UserDefaults
 
@@ -82,7 +84,23 @@ public struct UserIdentityStore: @unchecked Sendable {
     }
 
     public var email: String? {
-        get { defaults.string(forKey: Self.key) }
-        nonmutating set { defaults.set(newValue, forKey: Self.key) }
+        get { defaults.string(forKey: Self.emailKey) }
+        nonmutating set { defaults.set(newValue, forKey: Self.emailKey) }
+    }
+
+    public var userIdentifier: String? {
+        get { defaults.string(forKey: Self.userIdKey) }
+        nonmutating set { defaults.set(newValue, forKey: Self.userIdKey) }
+    }
+
+    public var fullName: String? {
+        get { defaults.string(forKey: Self.userNameKey) }
+        nonmutating set { defaults.set(newValue, forKey: Self.userNameKey) }
+    }
+
+    public func clear() {
+        defaults.removeObject(forKey: Self.emailKey)
+        defaults.removeObject(forKey: Self.userIdKey)
+        defaults.removeObject(forKey: Self.userNameKey)
     }
 }

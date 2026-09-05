@@ -10,6 +10,7 @@ struct WorkoutSessionView: View {
     @State private var confirmDiscard = false
     @FocusState private var focused: WorkoutFieldID?
     @State private var swapTarget: Int?
+    @State private var isReordering = false
 
     /// Every text field in visit order, so 이전/다음 can step across exercises.
     private var fieldOrder: [WorkoutFieldID] {
@@ -64,17 +65,22 @@ struct WorkoutSessionView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .sheet(isPresented: $isReordering) {
+            ReorderExercisesSheet(store: store)
+        }
         .sheet(item: Binding(get: { swapTarget.map(SwapTarget.init) },
                              set: { swapTarget = $0?.index })) { target in
             ExerciseSwapSheet(store: store, exerciseIndex: target.index) { item in
                 store.swap(exercise: target.index, to: item)
             }
         }
-        .alert("저장하지 못했습니다", isPresented: .constant(isFailed)) {
+        .alert("운동을 저장하지 못했습니다", isPresented: .constant(isFailed)) {
             Button("다시 시도") { onFinish() }
             Button("취소", role: .cancel) { store.finishState = .idle }
         } message: {
-            if case .failed(let message) = store.finishState { Text(message) }
+            if case .failed(let message) = store.finishState {
+                Text("\(message)\n\n기록한 세트는 임시 저장되어 안전하게 보관되어 있습니다. 네트워크 연결을 확인한 후 다시 시도해 주세요.")
+            }
         }
         .confirmationDialog("이 운동을 삭제할까요?", isPresented: $confirmDiscard,
                             titleVisibility: .visible) {
@@ -91,36 +97,63 @@ struct WorkoutSessionView: View {
     }
 
     private var header: some View {
-        VStack(spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
+        VStack(spacing: 10) {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(store.draft.dayTitle)
-                        .font(.headline.weight(.bold))
+                        .font(.title3.weight(.black))
                         .foregroundStyle(.primary)
 
                     if let analytics = store.analytics {
-                        Text(analytics.volumeSummaryString)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.secondary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "flame.fill")
+                                .font(.caption2)
+                                .foregroundStyle(Theme.brandGradient)
+                            Text("\(analytics.totalVolumeKg.formatted(.number.precision(.fractionLength(0...1)))) kg")
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundStyle(Theme.brandPrimary)
+                                .monospacedDigit()
+                            Text("누적 볼륨")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 
                 Spacer()
 
-                // Progress ratio chip
-                HStack(spacing: 4) {
-                    Text("\(store.draft.completedSetCount)")
-                        .font(.subheadline.monospacedDigit().weight(.bold))
+                HStack(spacing: 8) {
+                    Button {
+                        isReordering = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.up.arrow.down")
+                            Text("순서 변경")
+                        }
+                        .font(.caption.weight(.bold))
                         .foregroundStyle(Theme.brandPrimary)
-                        .contentTransition(.numericText())
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .background(Theme.brandPrimary.opacity(0.12), in: .capsule)
+                    }
+                    .buttonStyle(.plain)
 
-                    Text("/ \(store.draft.totalSetCount) 세트")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                    // Progress ratio chip
+                    HStack(spacing: 3) {
+                        Text("\(store.draft.completedSetCount)")
+                            .font(.system(size: 14, weight: .black, design: .rounded))
+                            .foregroundStyle(Theme.brandPrimary)
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+
+                        Text("/ \(store.draft.totalSetCount)")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Theme.brandPrimary.opacity(0.10), in: .capsule)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(Theme.brandPrimary.opacity(0.10), in: .capsule)
             }
 
             // Animated Gradient Progress Bar
@@ -133,6 +166,7 @@ struct WorkoutSessionView: View {
                     Capsule()
                         .fill(Theme.brandGradient)
                         .frame(width: max(0, proxy.size.width * CGFloat(store.draft.progressFraction)), height: 6)
+                        .shadow(color: Theme.brandPrimary.opacity(0.4), radius: 3, y: 1)
                         .animation(.spring(duration: 0.4, bounce: 0.1), value: store.draft.progressFraction)
                 }
             }
@@ -182,36 +216,44 @@ struct WorkoutSessionView: View {
                             Image(systemName: "plus.circle.fill")
                             Text("세트 추가")
                         }
-                        .font(.caption.weight(.semibold))
+                        .font(.caption.weight(.bold))
                         .foregroundStyle(Theme.brandPrimary)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 7)
                     }
                     .buttonStyle(.plain)
                     .listRowBackground(Color.clear)
                 } header: {
                     HStack(spacing: 8) {
-                        Image(systemName: exercise.equipment.iconName)
-                            .foregroundStyle(Theme.brandPrimary)
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Theme.brandPrimary.opacity(0.12))
+                                .frame(width: 28, height: 28)
+                            Image(systemName: exercise.equipment.iconName)
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(Theme.brandPrimary)
+                        }
+
                         Text(exercise.exerciseName)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(.primary)
 
                         let completedInThis = exercise.sets.count(where: \.completed)
                         let totalInThis = exercise.sets.count
                         if completedInThis == totalInThis && totalInThis > 0 {
-                            HStack(spacing: 2) {
+                            HStack(spacing: 3) {
                                 Image(systemName: "checkmark.circle.fill")
                                 Text("완료")
                             }
-                            .font(.caption2.weight(.bold))
+                            .font(.caption2.weight(.black))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(hex: "#34C759"), in: .capsule)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2.5)
+                            .background(Color(hex: "#10B981"), in: .capsule)
                             .transition(.scale.combined(with: .opacity))
                         } else if completedInThis > 0 {
                             Text("\(completedInThis)/\(totalInThis)")
-                                .font(.caption2.monospacedDigit().weight(.semibold))
+                                .font(.caption2.monospacedDigit().weight(.bold))
                                 .foregroundStyle(Theme.brandPrimary)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -220,7 +262,9 @@ struct WorkoutSessionView: View {
 
                         Spacer()
 
-                        Text(exercise.prescription).font(.caption).foregroundStyle(.secondary)
+                        Text(exercise.prescription)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
 
                         Menu {
                             Button("세트 추가", systemImage: "plus") {
@@ -228,6 +272,9 @@ struct WorkoutSessionView: View {
                             }
                             Button("대체 운동 찾기", systemImage: "arrow.triangle.swap") {
                                 swapTarget = exerciseIndex
+                            }
+                            Button("운동 순서 변경", systemImage: "arrow.up.arrow.down") {
+                                isReordering = true
                             }
                             Menu("휴식 시간 변경 (\(exercise.effectiveRestSeconds)초)", systemImage: "timer") {
                                 Button("30초") { store.setRestSeconds(30, exercise: exerciseIndex) }
@@ -237,7 +284,9 @@ struct WorkoutSessionView: View {
                                 Button("180초 (3분)") { store.setRestSeconds(180, exercise: exerciseIndex) }
                             }
                         } label: {
-                            Image(systemName: "ellipsis.circle").foregroundStyle(.secondary)
+                            Image(systemName: "ellipsis.circle")
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .textCase(nil)
@@ -268,6 +317,7 @@ struct WorkoutSessionView: View {
         return HStack(spacing: 12) {
             Button("삭제", role: .destructive) { confirmDiscard = true }
                 .buttonStyle(.bordered)
+                .tint(.secondary)
 
             Button(action: onFinish) {
                 if isSaving {
@@ -275,11 +325,18 @@ struct WorkoutSessionView: View {
                         .tint(.white)
                         .frame(maxWidth: .infinity)
                 } else {
-                    Text("운동 끝내기")
-                        .frame(maxWidth: .infinity)
+                    HStack(spacing: 6) {
+                        Image(systemName: "flag.checkered")
+                            .font(.subheadline.weight(.bold))
+                        Text("운동 끝내기")
+                            .font(.headline.weight(.bold))
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .buttonStyle(.borderedProminent)
+            .tint(Theme.brandPrimary)
+            .shadow(color: Theme.brandPrimary.opacity(0.35), radius: 8, y: 3)
             .disabled(store.isOrphaned || isSaving)
         }
         .controlSize(.large)

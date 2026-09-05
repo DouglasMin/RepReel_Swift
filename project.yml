@@ -43,6 +43,8 @@ targets:
       - package: ReelsKit
       - target: ReelsShareExtension
         embed: true
+      - target: ReelsWidgetExtension
+        embed: true
 
   ReelsShareExtension:
     type: app-extension
@@ -54,6 +56,19 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).ShareExtension
         INFOPLIST_FILE: ReelsShareExtension/Info.plist
         CODE_SIGN_ENTITLEMENTS: ReelsShareExtension/ReelsShareExtension.entitlements
+    dependencies:
+      - package: ReelsKit
+
+  ReelsWidgetExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ReelsWidgetExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).WidgetExtension
+        INFOPLIST_FILE: ReelsWidgetExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ReelsWidgetExtension/ReelsWidgetExtension.entitlements
     dependencies:
       - package: ReelsKit
 
@@ -77,10 +92,6 @@ schemes:
         ReelsWorkout: all
     run:
       config: Debug
-      # No backend yet — run against the fixtures in PreviewFixtures.swift.
-      # Remove this once a real API host is configured.
-      commandLineArguments:
-        "-demo": true
     test:
       config: Debug
       targets:

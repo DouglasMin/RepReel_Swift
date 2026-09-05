@@ -23,26 +23,33 @@ struct RestTimerBar: View {
                     Circle()
                         .trim(from: 0, to: progress)
                         .stroke(
-                            remaining <= 5 ? Color.orange : Theme.brandPrimary,
+                            remaining <= 5
+                                ? LinearGradient(colors: [.orange, .red], startPoint: .top, endPoint: .bottom)
+                                : Theme.brandGradient,
                             style: StrokeStyle(lineWidth: 3.5, lineCap: .round)
                         )
                         .rotationEffect(.degrees(-90))
                         .animation(.linear(duration: 0.1), value: progress)
 
                     Image(systemName: "timer")
-                        .font(.caption2.weight(.bold))
+                        .font(.caption2.weight(.black))
                         .foregroundStyle(remaining <= 5 ? Color.orange : Theme.brandPrimary)
                 }
-                .frame(width: 32, height: 32)
+                .frame(width: 34, height: 34)
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("휴식 중")
-                        .font(.caption2.weight(.medium))
+                    Text("세트 간 휴식")
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
 
                     Text(format(remaining))
-                        .font(.subheadline.monospacedDigit().weight(.bold))
+                        .font(.system(size: 16, weight: .black, design: .rounded))
+                        .monospacedDigit()
                         .contentTransition(.numericText(countsDown: true))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
 
                 Spacer(minLength: 4)
@@ -52,7 +59,7 @@ struct RestTimerBar: View {
                         Button("−15s") {
                             onAdjust(-15)
                         }
-                        .font(.caption2.monospacedDigit().weight(.semibold))
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 5)
                         .background(Color.primary.opacity(0.06), in: .capsule)
@@ -61,32 +68,41 @@ struct RestTimerBar: View {
                         Button("+30s") {
                             onAdjust(30)
                         }
-                        .font(.caption2.monospacedDigit().weight(.semibold))
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 5)
-                        .background(Theme.brandPrimary.opacity(0.12), in: .capsule)
+                        .background(Theme.brandPrimary.opacity(0.15), in: .capsule)
                         .foregroundStyle(Theme.brandPrimary)
                         .buttonStyle(.plain)
                     }
                 }
 
                 Button("건너뛰기", action: onDismiss)
-                    .font(.caption2.weight(.semibold))
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(.quaternary.opacity(0.6), in: .capsule)
+                    .background(Color.primary.opacity(0.06), in: .capsule)
                     .buttonStyle(.plain)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(.regularMaterial)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(.ultraThinMaterial)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(Theme.brandPrimary.opacity(0.15), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Theme.brandPrimary.opacity(0.4), Theme.brandSecondary.opacity(0.15)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.2
+                            )
                     )
-                    .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
+                    .shadow(color: Theme.brandPrimary.opacity(0.15), radius: 12, y: 5)
+                    .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
             )
             .onAppear {
                 if total == 0 { total = max(1, endsAt.timeIntervalSinceNow) }

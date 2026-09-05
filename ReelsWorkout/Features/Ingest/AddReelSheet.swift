@@ -10,20 +10,23 @@ struct AddReelSheet: View {
     @State private var isSubmitting = false
 
     private var isValid: Bool {
-        url.contains("instagram.com") && URL(string: url) != nil
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let isInstagram = trimmed.contains("instagram.com")
+        let isYouTube = trimmed.contains("youtube.com") || trimmed.contains("youtu.be")
+        return (isInstagram || isYouTube) && URL(string: url.trimmingCharacters(in: .whitespacesAndNewlines)) != nil
     }
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("릴스 URL") {
-                    TextField("https://www.instagram.com/reel/…", text: $url, axis: .vertical)
+                Section("영상 링크 (Instagram 릴스 또는 YouTube 쇼츠)") {
+                    TextField("https://www.instagram.com/reel/… 또는 https://youtube.com/shorts/…", text: $url, axis: .vertical)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .keyboardType(.URL)
                 }
             }
-            .navigationTitle("릴스 추가")
+            .navigationTitle("영상 추가")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

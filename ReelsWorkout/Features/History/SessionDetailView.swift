@@ -4,15 +4,31 @@ import SwiftUI
 /// Detailed inspection view for a completed past workout session log.
 struct SessionDetailView: View {
     let session: WorkoutSessionLog
+    var store: HistoryStore? = nil
+    var onDeleted: (() -> Void)? = nil
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(AppEnvironment.self) private var environment
+    @State private var currentSession: WorkoutSessionLog
+    @State private var isEditing = false
+    @State private var confirmDelete = false
+    @State private var isDeleting = false
+
+    init(session: WorkoutSessionLog, store: HistoryStore? = nil, onDeleted: (() -> Void)? = nil) {
+        self.session = session
+        self.store = store
+        self.onDeleted = onDeleted
+        _currentSession = State(initialValue: session)
+    }
 
     private var formattedDate: String {
-        guard let loggedAt = session.loggedAt else { return "-" }
+        guard let loggedAt = currentSession.loggedAt else { return "-" }
         let date = Date(timeIntervalSince1970: TimeInterval(loggedAt))
         return date.formatted(date: .abbreviated, time: .shortened)
     }
 
     private var durationString: String? {
-        guard let durationSeconds = session.durationSeconds, durationSeconds > 0 else { return nil }
+        guard let durationSeconds = currentSession.durationSeconds, durationSeconds > 0 else { return nil }
         let minutes = durationSeconds / 60
         let seconds = durationSeconds % 60
         if minutes >= 60 {
@@ -32,7 +48,7 @@ struct SessionDetailView: View {
             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             .listRowBackground(Color.clear)
 
-            if let notes = session.sessionNotes, !notes.isEmpty {
+            if let notes = currentSession.sessionNotes, !notes.isEmpty {
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
                         Label("운동 메모", systemImage: "text.bubble.fill")
@@ -53,7 +69,7 @@ struct SessionDetailView: View {
                 .listRowBackground(Color.clear)
             }
 
-            if let analytics = session.volumeAnalytics, !analytics.exerciseBreakdown.isEmpty {
+            if let analytics = currentSession.volumeAnalytics, !analytics.exerciseBreakdown.isEmpty {
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
                         Label("종목별 볼륨 기여도", systemImage: "chart.pie.fill")
@@ -78,7 +94,7 @@ struct SessionDetailView: View {
             }
 
             Section {
-                ForEach(session.completedExercises) { exercise in
+                ForEach(currentSession.completedExercises) { exercise in
                     ExerciseDetailCard(exercise: exercise)
                         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                         .listRowBackground(Color.clear)
@@ -93,15 +109,68 @@ struct SessionDetailView: View {
         }
         .listStyle(.plain)
         .background(Theme.listBackground)
-        .navigationTitle(session.dayNumber > 0 ? "Day \(session.dayNumber) 기록" : "운동 상세 기록")
+        .navigationTitle(currentSession.dayNumber > 0 ? "Day \(currentSession.dayNumber) 기록" : "운동 상세 기록")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button {
+                        isEditing = true
+                    } label: {
+                        Label("기록 수정", systemImage: "pencil")
+                    }
+
+                    Button(role: .destructive) {
+                        confirmDelete = true
+                    } label: {
+                        Label("기록 삭제", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.body.weight(.semibold))
+                }
+            }
+        }
+        .sheet(isPresented: $isEditing) {
+            EditSessionSheet(session: currentSession) { updated in
+                currentSession = updated
+                if let store {
+                    Task { try? await store.updateSession(updated) }
+                } else {
+                    Task { try? await environment.client.updateSession(id: updated.sessionId ?? updated.id, updated) }
+                }
+            }
+        }
+        .confirmationDialog(
+            "운동 기록 삭제",
+            isPresented: $confirmDelete,
+            titleVisibility: .visible
+        ) {
+            Button("삭제", role: .destructive) {
+                Task {
+                    isDeleting = true
+                    let sid = currentSession.sessionId ?? currentSession.id
+                    if let store {
+                        try? await store.deleteSession(id: sid)
+                    } else {
+                        _ = try? await environment.client.deleteSession(id: sid)
+                    }
+                    onDeleted?()
+                    isDeleting = false
+                    dismiss()
+                }
+            }
+            Button("취소", role: .cancel) {}
+        } message: {
+            Text("이 운동 기록을 완전히 삭제하시겠습니까?\n삭제된 기록은 복구할 수 없습니다.")
+        }
     }
 
     private var headerCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(session.programId)
+                    Text(currentSession.programId)
                         .font(.headline.weight(.bold))
                         .foregroundStyle(Theme.brandPrimary)
                         .lineLimit(1)
@@ -122,7 +191,7 @@ struct SessionDetailView: View {
 
             Divider()
 
-            if let analytics = session.volumeAnalytics {
+            if let analytics = currentSession.volumeAnalytics {
                 HStack(spacing: 20) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("총 볼륨")

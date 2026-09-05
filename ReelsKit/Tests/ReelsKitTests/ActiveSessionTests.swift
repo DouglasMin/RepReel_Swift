@@ -215,4 +215,32 @@ struct VolumeTests {
         #expect(analytics.totalVolumeKg == 3555)
         #expect(analytics.volumeSummaryString == "3,555 kg (5세트 · 42회)")
     }
+
+    @Test("Decodes root-level flat session response with server volume")
+    func decodesFlatFinishedSession() throws {
+        let json = #"""
+        {
+          "session_id": "session_8f9e0d1c2b3a",
+          "program_id": "che-dan-sil-ppl-routine-part2",
+          "day_number": 1,
+          "duration_seconds": 3600,
+          "completed_exercises": [],
+          "volume_analytics": {
+            "total_volume_kg": 3555.0,
+            "total_sets_completed": 5,
+            "total_reps_completed": 42,
+            "exercise_breakdown": []
+          }
+        }
+        """#
+
+        let response = try JSONDecoder().decode(
+            SessionCreateResponse.self, from: Data(json.utf8)
+        )
+
+        #expect(response.sessionId == "session_8f9e0d1c2b3a")
+        let analytics = try #require(response.session?.volumeAnalytics)
+        #expect(analytics.totalVolumeKg == 3555)
+        #expect(response.session?.programId == "che-dan-sil-ppl-routine-part2")
+    }
 }

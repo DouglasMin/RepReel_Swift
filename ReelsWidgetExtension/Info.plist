@@ -13,27 +13,19 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
-	<string>APPL</string>
+	<string>XPC!</string>
 	<key>CFBundleDisplayName</key>
-	<string>$(APP_DISPLAY_NAME)</string>
+	<string>RepReel Widgets</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>UILaunchScreen</key>
-	<dict/>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-	</array>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
-	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
-	<true/>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.widgetkit-extension</string>
+	</dict>
 
-	<!-- Injected from Config/*.xcconfig; read through ReelsKit.AppConfig. -->
 	<key>APIHost</key>
 	<string>$(API_HOST)</string>
 	<key>APIStagePath</key>
