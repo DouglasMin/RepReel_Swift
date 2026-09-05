@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RepReel — Turn Instagram Reels & YouTube Shorts into Real Workouts</title>
+  <meta name="description" content="RepReel uses AI to automatically extract exercises, sets, reps, and rest timers from Instagram Reels & YouTube Shorts into structured gym routines.">
+  <meta property="og:title" content="RepReel — AI Workout Parser for Reels & Shorts">
+  <meta property="og:description" content="Stop screenshotting fitness videos. Automatically turn Reels & Shorts into actionable workout routines.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#ff5a36">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Ambient Glow -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- Navigation -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-logo">
+        <div class="logo-badge">⚡️</div>
+        <span>RepReel</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#support">Support</a></li>
+        <li><a href="privacy.html">Privacy</a></li>
+      </ul>
+      <a href="#download" class="nav-btn">Get the App</a>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-tag">⚡️ AI WORKOUT AUTOMATION</div>
+      <h1 class="hero-title">
+        Turn Reels & Shorts into <span class="highlight">Real Workouts</span>
+      </h1>
+      <p class="hero-description">
+        Stop bookmarking and screenshotting fitness videos you never do. Share any Instagram Reel or YouTube Short directly to RepReel, and AI will extract every exercise, set, and rep into an actionable routine ready for the gym.
+      </p>
+      <div class="hero-cta-group">
+        <a href="#download" class="btn-primary" id="download">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 1.01-2.87-.93.04-2.02.62-2.65 1.38-.56.65-.99 1.7-1.02 2.76 1.04.08 2.05-.52 2.66-1.27z"/>
+          </svg>
+          Download on App Store
+        </a>
+        <a href="#features" class="btn-secondary">Explore Features</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <h4>1-Tap</h4>
+          <p>Share Sheet Ingestion</p>
+        </div>
+        <div class="stat-item">
+          <h4>Gemini AI</h4>
+          <p>Multimodal Parsing</p>
+        </div>
+        <div class="stat-item">
+          <h4>100%</h4>
+          <p>Focus on Lifting</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phone Mockup Preview -->
+    <div class="hero-visual">
+      <div class="phone-mockup">
+        <div class="phone-island">
+          <span>9:41</span>
+          <span>⚡️ RepReel</span>
+        </div>
+        <div class="phone-screen">
+          <div class="mock-card mock-hero">
+            <span class="mock-badge badge-ppl">CHEST & TRICEPS • PART 1/2</span>
+            <div class="mock-title">🔥 Ultra PPL Hypertrophy</div>
+            <p style="font-size:0.75rem; color:#9ca3af; margin-top:2px;">Imported from Instagram Reel • 4 Exercises</p>
+          </div>
+
+          <div class="mock-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:700; font-size:0.85rem;">1. Incline Dumbbell Press</span>
+              <span style="font-size:0.75rem; color:#ff5a36; font-weight:700;">3 Sets</span>
+            </div>
+            <div class="mock-row">
+              <span>Set 1 • 32 kg × 10 reps</span>
+              <div class="mock-check">✓</div>
+            </div>
+            <div class="mock-row">
+              <span>Set 2 • 34 kg × 8 reps</span>
+              <div class="mock-check">✓</div>
+            </div>
+            <div class="mock-row" style="opacity:0.6;">
+              <span>Set 3 • 34 kg × 8 reps</span>
+              <span style="font-size:0.75rem; color:#6b7280;">Next</span>
+            </div>
+          </div>
+
+          <div class="mock-timer">
+            <span>⏱ Rest Timer (Auto)</span>
+            <span>01:15</span>
+          </div>
+
+          <div class="mock-card" style="opacity:0.75;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:700; font-size:0.85rem;">2. Dips (Weighted)</span>
+              <span style="font-size:0.75rem; color:#9ca3af;">4 Sets</span>
+            </div>
+            <div class="mock-row">
+              <span>Set 1 • +20 kg × 12 reps</span>
+              <span style="font-size:0.75rem; color:#6b7280;">Upcoming</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section" id="features">
+    <div class="section-header">
+      <div class="section-tag">Powerful Capabilities</div>
+      <h2 class="section-title">Built for Real Lifters</h2>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🪄</div>
+        <h3>AI Video Extraction</h3>
+        <p>Gemini multimodal vision analyzes reel captions, audio cues, and visual text overlays to extract exact exercises, sets, target reps, and rest periods with zero manual typing.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🧩</div>
+        <h3>Multi-Part Auto Merge</h3>
+        <p>Found a Part 1 & Part 2 routine? RepReel's intelligent series linker detects connected videos and unifies them into a single comprehensive training program.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">⏱</div>
+        <h3>Smart Rest Timers</h3>
+        <p>Automated rest timers trigger the moment you check off a set. Receive instant haptic feedback so you stay locked into your workout cadence without watching the clock.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Tonnage & PR Analytics</h3>
+        <p>Track cumulative volume, exercise progression, and set completion over time. Clean, minimalist charts give you total clarity on your progressive overload.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Workflow Section -->
+  <section class="workflow-section" id="how-it-works">
+    <div class="section-header">
+      <div class="section-tag">Seamless Flow</div>
+      <h2 class="section-title">How RepReel Works</h2>
+    </div>
+
+    <div class="workflow-steps">
+      <div class="step-card">
+        <div class="step-number">01</div>
+        <h3>Share Video</h3>
+        <p>Tap the iOS Share button on any Instagram Reel or YouTube Short and select <strong>RepReel</strong>.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">02</div>
+        <h3>AI Ingestion</h3>
+        <p>Our serverless engine transcribes the workout into structured routines, reps, and rest times in seconds.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">03</div>
+        <h3>Crush Your Workout</h3>
+        <p>Open RepReel at the gym. Log weights, check off sets, and let auto-timers keep your rest periods tight.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Support & FAQ Section -->
+  <section class="support-section" id="support">
+    <h2>Need Help or Have Feedback?</h2>
+    <p>We are constantly improving RepReel. If you have questions, feedback, or need technical assistance, we are here to support you.</p>
+    <div class="support-links">
+      <a href="mailto:min990214@gmail.com" class="btn-primary">📧 Email Support</a>
+      <a href="https://github.com/DouglasMin/RepReel_Swift/issues" target="_blank" rel="noopener noreferrer" class="btn-secondary">GitHub Issue Tracker</a>
+      <a href="privacy.html" class="btn-secondary">Privacy Policy</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#support">Support</a>
+      <a href="privacy.html">Privacy Policy</a>
+    </div>
+    <p>© 2026 RepReel. All rights reserved.</p>
+    <p style="margin-top: 6px; font-size: 0.8rem;">Instagram and YouTube are trademarks of their respective owners. RepReel is not affiliated with Meta or Google.</p>
+  </footer>
+
+</body>
+</html>
