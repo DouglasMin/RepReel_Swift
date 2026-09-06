@@ -41,15 +41,21 @@ Every request from the iOS App and Share Extension must include:
 | **13** | `DELETE`| `/sessions/active` | Discards or cancels unfinished workout draft | Live Tracking |
 | **14** | `POST` | `/sessions` | Logs completed workout session (auto-calculates total volume) | Workout Finish |
 | **15** | `GET` | `/sessions` | Lists past workout session logs & volume history | Analytics |
+| **16** | `PUT` | `/sessions/{session_id}` | Updates existing completed workout session log | History Edit |
+| **17** | `DELETE`| `/sessions/{session_id}` | Deletes a completed workout session log | History Cleanup |
 
 ---
 
 ## 3. Detailed Endpoint Specs
 
-### 1. Ingest Instagram Reel (Asynchronous)
+### 1. Ingest Social Video (Instagram Reels & YouTube Shorts)
 * **Method**: `POST`
 * **Path**: `/reels`
-* **Request Body**: `{ "url": "https://www.instagram.com/reel/DccqEKJPPqR/" }`
+* **Request Body**:
+  ```json
+  { "url": "https://www.youtube.com/shorts/3jZp9-k9v9M" }
+  ```
+  *(Also accepts Instagram Reels: `{ "url": "https://www.instagram.com/reel/DccqEKJPPqR/" }`)*
 * **Response (`202 Accepted`)**:
   ```json
   {
@@ -310,3 +316,53 @@ Every request from the iOS App and Share Extension must include:
 * **Method**: `GET`
 * **Path**: `/sessions?program_id=che-dan-sil-ppl-routine-part2&limit=50`
 * **Response (`200 OK`)**: List of logged workout sessions with volume analytics.
+
+---
+
+### 16. Update Workout Session Log
+* **Method**: `PUT`
+* **Path**: `/sessions/{session_id}`
+* **Headers**: `x-user-email: dongik@example.com`, `x-app-secret: ...`
+* **Request Body**:
+  ```json
+  {
+    "program_id": "che-dan-sil-ppl-routine-part2",
+    "day_number": 1,
+    "logged_at": 1771982600,
+    "duration_seconds": 3600,
+    "session_notes": "Updated notes",
+    "completed_exercises": [
+      {
+        "exercise_id": "bench_press",
+        "exercise_name": "벤치프레스",
+        "sets": [
+          { "set_number": 1, "weight_kg": 82.5, "reps": 10, "completed": true }
+        ]
+      }
+    ]
+  }
+  ```
+* **Response (`200 OK`)**:
+  ```json
+  {
+    "success": true,
+    "session_id": "session_8f9e0d1c2b3a",
+    "message": "Workout session updated successfully."
+  }
+  ```
+
+---
+
+### 17. Delete Workout Session Log
+* **Method**: `DELETE`
+* **Path**: `/sessions/{session_id}`
+* **Headers**: `x-user-email: dongik@example.com`, `x-app-secret: ...`
+* **Response (`200 OK`)**:
+  ```json
+  {
+    "success": true,
+    "deleted": true,
+    "session_id": "session_8f9e0d1c2b3a"
+  }
+  ```
+
