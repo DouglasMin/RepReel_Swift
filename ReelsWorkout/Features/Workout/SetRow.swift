@@ -44,82 +44,12 @@ struct SetRow: View {
                     .foregroundStyle(set.completed ? Theme.brandPrimary : .secondary)
                     .frame(width: 22, alignment: .leading)
 
-                // Weight Input Field
-                HStack(spacing: 3) {
-                    TextField("0", text: $weightText)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.center)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .focused($focused, equals: weightFieldID)
-                        .frame(width: 52)
-                        .onChange(of: weightText) { _, new in
-                            if focused == weightFieldID {
-                                onWeight(Double(new))
-                            }
-                        }
-                        .onSubmit {
-                            commitWeight()
-                        }
-                    Text("kg")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(focused == weightFieldID ? Theme.brandPrimary.opacity(0.10) : Color.primary.opacity(0.05))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .strokeBorder(focused == weightFieldID ? Theme.brandPrimary.opacity(0.6) : Color.clear, lineWidth: 1.5)
-                        )
-                )
-
-                // Reps Input Field
-                HStack(spacing: 3) {
-                    TextField("0", text: $repsText)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.center)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .focused($focused, equals: repsFieldID)
-                        .frame(width: 42)
-                        .onChange(of: repsText) { _, new in
-                            if focused == repsFieldID, let r = Int(new) {
-                                onReps(r)
-                            }
-                        }
-                    Text("회")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(focused == repsFieldID ? Theme.brandPrimary.opacity(0.10) : Color.primary.opacity(0.05))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .strokeBorder(focused == repsFieldID ? Theme.brandPrimary.opacity(0.6) : Color.clear, lineWidth: 1.5)
-                        )
-                )
+                weightInput
+                repsInput
 
                 Spacer(minLength: 0)
 
-                // RPE Toggle Button
-                Button(action: onToggleRPE) {
-                    Text(set.rpe.map { "RPE \($0.formatted(.number.precision(.fractionLength(0...1))))" } ?? "RPE")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundStyle(set.rpe == nil ? .secondary : Theme.brandPrimary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .background(set.rpe != nil ? Theme.brandPrimary.opacity(0.12) : Color.primary.opacity(0.04), in: .capsule)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-
-                // Completion Circle
+                rpeButton
                 completionCircle
             }
 
@@ -127,10 +57,8 @@ struct SetRow: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(set.completed ? Theme.brandPrimary.opacity(0.08) : Color.clear)
-        )
+        .background(rowBackground)
+        .animation(.spring(duration: 0.3, bounce: 0.15), value: set.completed)
         .sensoryFeedback(.success, trigger: set.completed)
         .sensoryFeedback(.selection, trigger: weightText)
         .accessibilityElement(children: .combine)
@@ -215,6 +143,91 @@ struct SetRow: View {
         .padding(.horizontal, 4)
         .padding(.vertical, 4)
         .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+
+    private var weightInput: some View {
+        HStack(spacing: 3) {
+            TextField("0", text: $weightText)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.center)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .focused($focused, equals: weightFieldID)
+                .frame(width: 52)
+                .onChange(of: weightText) { _, new in
+                    if focused == weightFieldID {
+                        onWeight(Double(new))
+                    }
+                }
+                .onSubmit {
+                    commitWeight()
+                }
+            Text("kg")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(focused == weightFieldID ? Theme.brandPrimary.opacity(0.10) : Color.primary.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(focused == weightFieldID ? Theme.brandPrimary.opacity(0.6) : Color.clear, lineWidth: 1.5)
+                )
+        )
+    }
+
+    private var repsInput: some View {
+        HStack(spacing: 3) {
+            TextField("0", text: $repsText)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .focused($focused, equals: repsFieldID)
+                .frame(width: 42)
+                .onChange(of: repsText) { _, new in
+                    if focused == repsFieldID, let r = Int(new) {
+                        onReps(r)
+                    }
+                }
+            Text("회")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(focused == repsFieldID ? Theme.brandPrimary.opacity(0.10) : Color.primary.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(focused == repsFieldID ? Theme.brandPrimary.opacity(0.6) : Color.clear, lineWidth: 1.5)
+                )
+        )
+    }
+
+    private var rpeButton: some View {
+        Button(action: onToggleRPE) {
+            Text(set.rpe.map { "RPE \($0.formatted(.number.precision(.fractionLength(0...1))))" } ?? "RPE")
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundStyle(set.rpe == nil ? .secondary : Theme.brandPrimary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(set.rpe != nil ? Theme.brandPrimary.opacity(0.12) : Color.primary.opacity(0.04), in: .capsule)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var rowBackground: some View {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(set.completed ? Theme.brandPrimary.opacity(0.08) : Color.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(set.completed ? Theme.brandPrimary.opacity(0.22) : Color.clear, lineWidth: 1)
+            )
     }
 }
 

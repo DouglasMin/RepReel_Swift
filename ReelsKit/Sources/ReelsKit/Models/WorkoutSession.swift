@@ -94,6 +94,7 @@ public struct WorkoutSessionLog: Codable, Identifiable, Sendable {
         loggedAt: Int? = Int(Date().timeIntervalSince1970),
         durationSeconds: Int? = nil,
         completedExercises: [ExecutedExerciseLog],
+        volumeAnalytics: WorkoutVolumeAnalytics? = nil,
         sessionNotes: String? = nil
     ) {
         self.sessionId = sessionId
@@ -102,6 +103,7 @@ public struct WorkoutSessionLog: Codable, Identifiable, Sendable {
         self.loggedAt = loggedAt
         self.durationSeconds = durationSeconds
         self.completedExercises = completedExercises
+        self.volumeAnalytics = volumeAnalytics
         self.sessionNotes = sessionNotes
     }
 

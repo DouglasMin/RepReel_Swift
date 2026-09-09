@@ -138,39 +138,55 @@ struct WorkoutSessionView: View {
                     }
                     .buttonStyle(.plain)
 
-                    // Progress ratio chip
-                    HStack(spacing: 3) {
+                    // Progress ratio chip with percentage
+                    HStack(spacing: 4) {
                         Text("\(store.draft.completedSetCount)")
                             .font(.system(size: 14, weight: .black, design: .rounded))
-                            .foregroundStyle(Theme.brandPrimary)
+                            .foregroundStyle(store.draft.progressFraction >= 1.0 ? Color(hex: "#10B981") : Theme.brandPrimary)
                             .monospacedDigit()
                             .contentTransition(.numericText())
 
                         Text("/ \(store.draft.totalSetCount)")
                             .font(.system(size: 12, weight: .bold, design: .rounded))
                             .foregroundStyle(.secondary)
+
+                        Text("(\(Int(store.draft.progressFraction * 100))%)")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundStyle(store.draft.progressFraction >= 1.0 ? Color(hex: "#10B981") : Theme.brandPrimary)
+                            .monospacedDigit()
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(Theme.brandPrimary.opacity(0.10), in: .capsule)
+                    .background(
+                        (store.draft.progressFraction >= 1.0 ? Color(hex: "#10B981") : Theme.brandPrimary).opacity(0.12),
+                        in: .capsule
+                    )
                 }
             }
 
-            // Animated Gradient Progress Bar
+            // Animated Gradient Progress Bar with Glow
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule()
                         .fill(Color.primary.opacity(0.06))
-                        .frame(height: 6)
+                        .frame(height: 7)
 
                     Capsule()
-                        .fill(Theme.brandGradient)
-                        .frame(width: max(0, proxy.size.width * CGFloat(store.draft.progressFraction)), height: 6)
-                        .shadow(color: Theme.brandPrimary.opacity(0.4), radius: 3, y: 1)
-                        .animation(.spring(duration: 0.4, bounce: 0.1), value: store.draft.progressFraction)
+                        .fill(
+                            store.draft.progressFraction >= 1.0
+                                ? LinearGradient(colors: [Color(hex: "#10B981"), Color(hex: "#06B6D4")], startPoint: .leading, endPoint: .trailing)
+                                : Theme.brandGradient
+                        )
+                        .frame(width: max(0, proxy.size.width * CGFloat(store.draft.progressFraction)), height: 7)
+                        .shadow(
+                            color: (store.draft.progressFraction >= 1.0 ? Color(hex: "#10B981") : Theme.brandPrimary).opacity(0.55),
+                            radius: 5,
+                            y: 1
+                        )
+                        .animation(.spring(duration: 0.45, bounce: 0.2), value: store.draft.progressFraction)
                 }
             }
-            .frame(height: 6)
+            .frame(height: 7)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)

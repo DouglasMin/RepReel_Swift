@@ -1,7 +1,9 @@
 import AudioToolbox
 import SwiftUI
+import UIKit
 
-/// Counts down from the program's prescribed rest with interactive adjustments and circular progress.
+/// Counts down from the program's prescribed rest with interactive adjustments,
+/// circular progress ring, and rhythmic mini-pulse alert under 10 seconds.
 struct RestTimerBar: View {
     let endsAt: Date
     var onAdjust: ((TimeInterval) -> Void)? = nil
@@ -9,42 +11,66 @@ struct RestTimerBar: View {
 
     @State private var didFire = false
     @State private var total: TimeInterval = 0
+    @State private var lastSecondFired: Int = -1
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 0.1)) { timeline in
             let remaining = max(0, endsAt.timeIntervalSince(timeline.date))
             let progress = total > 0 ? min(1.0, max(0.0, remaining / total)) : 0.0
+            let isWarning = remaining <= 10 && remaining > 0
+            let isCritical = remaining <= 5 && remaining > 0
 
             HStack(spacing: 12) {
-                // Circular Countdown Ring
+                // Circular Countdown Ring with Warning Glow
                 ZStack {
+                    if isWarning {
+                        Circle()
+                            .fill((isCritical ? Color.red : Color.orange).opacity(0.22))
+                            .frame(width: 44, height: 44)
+                            .blur(radius: 6)
+                            .scaleEffect(isCritical ? 1.08 : 1.0)
+                            .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: isCritical)
+                    }
+
                     Circle()
                         .stroke(Color.primary.opacity(0.08), lineWidth: 3.5)
+
                     Circle()
                         .trim(from: 0, to: progress)
                         .stroke(
-                            remaining <= 5
+                            isCritical
                                 ? LinearGradient(colors: [.orange, .red], startPoint: .top, endPoint: .bottom)
-                                : Theme.brandGradient,
+                                : isWarning
+                                    ? LinearGradient(colors: [Theme.brandPrimary, .orange], startPoint: .top, endPoint: .bottom)
+                                    : Theme.brandGradient,
                             style: StrokeStyle(lineWidth: 3.5, lineCap: .round)
                         )
                         .rotationEffect(.degrees(-90))
                         .animation(.linear(duration: 0.1), value: progress)
 
-                    Image(systemName: "timer")
-                        .font(.caption2.weight(.black))
-                        .foregroundStyle(remaining <= 5 ? Color.orange : Theme.brandPrimary)
+                    Image(systemName: isCritical ? "exclamationmark" : "timer")
+                        .font(.system(size: isCritical ? 11 : 12, weight: .black))
+                        .foregroundStyle(isCritical ? Color.red : isWarning ? Color.orange : Theme.brandPrimary)
                 }
-                .frame(width: 34, height: 34)
+                .frame(width: 36, height: 36)
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("세트 간 휴식")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    HStack(spacing: 4) {
+                        Text(isCritical ? "휴식 종료 임박" : "세트 간 휴식")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(isCritical ? Color.red : .secondary)
+                            .lineLimit(1)
+
+                        if isCritical {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 5, height: 5)
+                        }
+                    }
 
                     Text(format(remaining))
-                        .font(.system(size: 16, weight: .black, design: .rounded))
+                        .font(.system(size: 17, weight: .black, design: .rounded))
+                        .foregroundStyle(isCritical ? Color.red : .primary)
                         .monospacedDigit()
                         .contentTransition(.numericText(countsDown: true))
                         .lineLimit(1)
@@ -94,14 +120,22 @@ struct RestTimerBar: View {
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .strokeBorder(
                                 LinearGradient(
-                                    colors: [Theme.brandPrimary.opacity(0.4), Theme.brandSecondary.opacity(0.15)],
+                                    colors: isCritical
+                                        ? [Color.red.opacity(0.7), Color.orange.opacity(0.4)]
+                                        : [Theme.brandPrimary.opacity(0.4), Theme.brandSecondary.opacity(0.15)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
-                                lineWidth: 1.2
+                                lineWidth: isCritical ? 1.6 : 1.2
                             )
                     )
-                    .shadow(color: Theme.brandPrimary.opacity(0.15), radius: 12, y: 5)
+                    .shadow(
+                        color: isCritical
+                            ? Color.red.opacity(0.3)
+                            : Theme.brandPrimary.opacity(0.15),
+                        radius: isCritical ? 16 : 12,
+                        y: 5
+                    )
                     .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
             )
             .onAppear {
@@ -113,6 +147,14 @@ struct RestTimerBar: View {
                     total = max(1, currentRemaining)
                 }
                 didFire = false
+                lastSecondFired = -1
+            }
+            // Rhythmic Countdown Haptic Pulses for the final 3, 2, 1 seconds
+            .onChange(of: Int(remaining)) { _, wholeSeconds in
+                if wholeSeconds >= 1 && wholeSeconds <= 3 && wholeSeconds != lastSecondFired {
+                    lastSecondFired = wholeSeconds
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                }
             }
             .onChange(of: remaining <= 0) { _, done in
                 guard done, !didFire else { return }
@@ -120,7 +162,7 @@ struct RestTimerBar: View {
                 AudioServicesPlaySystemSound(1007) // System chime
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
 
-                // Auto-dismiss after a brief delay so the user sees the countdown finish
+                // Auto-dismiss after brief delay so user sees countdown finish
                 Task {
                     try? await Task.sleep(for: .milliseconds(600))
                     withAnimation(.spring(duration: 0.35)) {
@@ -137,9 +179,10 @@ struct RestTimerBar: View {
         return String(format: "%d:%02d", whole / 60, whole % 60)
     }
 }
+
 #if DEBUG
-#Preview("RestTimerBar") {
-    RestTimerBar(endsAt: .now.addingTimeInterval(45), onAdjust: { _ in }, onDismiss: {})
+#Preview("RestTimerBar - Warning") {
+    RestTimerBar(endsAt: .now.addingTimeInterval(8), onAdjust: { _ in }, onDismiss: {})
         .padding()
 }
 #endif

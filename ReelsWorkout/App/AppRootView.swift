@@ -50,7 +50,7 @@ struct AppRootView: View {
                 } expanded: {
                     Group {
                         if case .finished(let log) = workout.finishState {
-                            WorkoutSummaryView(log: log) { environment.endWorkout() }
+                            WorkoutSummaryView(log: log, programTitle: workout.draft.dayTitle) { environment.endWorkout() }
                         } else {
                             WorkoutSessionView(
                                 store: workout,
